@@ -13,19 +13,23 @@ import { JwtStrategy } from './strategy/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 
 import { CloudinaryUploadService } from 'src/cloudinary/cloudinaryUpload.service';
-import { Vote } from 'src/(resources)/vote/entities/vote.entity';
+import {
+  AdminProfile,
+  StudentProfile,
+  TeacherProfile,
+} from 'src/(resources)/users/entities/user-profile.entity';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User,
       Role,
-      Admin,
-      Voter,
-      Vote,
-      Judge,
-      Contestant,
+      AdminProfile,
+      StudentProfile,
+      TeacherProfile,
     ]),
+    MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UsersModule,
     JwtModule.registerAsync({

@@ -31,6 +31,7 @@ export function createTypeOrmConfig(configService: ConfigService): any {
       },
       autoLoadEntities: true,
       synchronize: configService.get('MYSQL_SYNC') === 'true',
+      driver: require('mysql2'),
     };
   } else {
     // Production configuration using Aiven MySQL
@@ -49,6 +50,7 @@ export function createTypeOrmConfig(configService: ConfigService): any {
       },
       autoLoadEntities: true,
       synchronize: false,
+      driver: require('mysql2'),
     };
   }
 }

@@ -25,6 +25,11 @@ export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
   @Post()
+  seed() {
+    return this.roleService.seedRoles();
+  }
+
+  @Post()
   @UseGuards(JwtGuard, RolesGuard)
   @ApiBearerAuth('JWT')
   @Roles('admin')

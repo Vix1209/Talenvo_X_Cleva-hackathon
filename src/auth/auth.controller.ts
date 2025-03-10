@@ -33,11 +33,6 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GlobalApiResponse } from '../../utils/decorator/api-response.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { VerifyEmailDto } from './dto/verifyEmail.dto';
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
 import { ResetTokenDto } from './dto/reset-token.dto';
 
 @GlobalApiResponse()
@@ -49,7 +44,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('create-admin')
-  @ApiOperation({ summary: 'Register an account' })
+  @ApiOperation({ summary: 'Register an admin account' })
   async CreateAdmin(@Body() dto: CreateAdminDto) {
     const data = await this.authService.create_Admin(dto);
     return {
@@ -58,20 +53,20 @@ export class AuthController {
     };
   }
 
-  @Post('create-user')
-  @ApiOperation({ summary: 'Register an account' })
+  @Post('create-student')
+  @ApiOperation({ summary: 'Register a student' })
   async CreateUser(@Body() dto: CreateStudentDto) {
-    const data = await this.authService.create_Voter(dto);
+    const data = await this.authService.create_student(dto);
     return {
       data,
       status: 'success',
     };
   }
 
-  @Post('create-user')
-  @ApiOperation({ summary: 'Register an account' })
+  @Post('create-teacher')
+  @ApiOperation({ summary: 'Register a teacher account' })
   async CreateTeacher(@Body() dto: CreateTeacherDto) {
-    const data = await this.authService.create_Voter(dto);
+    const data = await this.authService.create_Teacher(dto);
     return {
       data,
       status: 'success',

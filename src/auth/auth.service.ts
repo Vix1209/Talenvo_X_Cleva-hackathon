@@ -13,7 +13,11 @@ import { JwtService } from '@nestjs/jwt';
 import { MoreThan, Repository } from 'typeorm';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { CreateJudgeDto, CreateUserDto } from './dto/create-account.dto';
+import {
+  CreateStudentDto,
+  CreateTeacherDto,
+  CreateUserDto,
+} from './dto/create-account.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Role } from 'src/(resources)/role/entities/role.entity';
 import { CloudinaryUploadService } from 'src/cloudinary/cloudinaryUpload.service';
@@ -21,16 +25,11 @@ import { CloudinaryUploadService } from 'src/cloudinary/cloudinaryUpload.service
 import { EmailValidationException } from 'utils';
 import { VerifyEmailDto } from './dto/verifyEmail.dto';
 import {
-  Contestant,
-  Admin,
-  Voter,
-  Judge,
+  AdminProfile,
+  StudentProfile,
+  TeacherProfile,
 } from 'src/(resources)/users/entities/user-profile.entity';
-import {
-  CreateAdminDto,
-  CreateContestantDto,
-  CreateVoterDto,
-} from './dto/create-account.dto';
+import { CreateAdminDto } from './dto/create-account.dto';
 import { ResetTokenDto } from './dto/reset-token.dto';
 
 @Injectable()
@@ -42,172 +41,26 @@ export class AuthService {
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
 
-    @InjectRepository(Admin)
-    private readonly adminRepository: Repository<Admin>,
+    @InjectRepository(AdminProfile)
+    private readonly adminProfileRepository: Repository<AdminProfile>,
 
-    @InjectRepository(Voter)
-    private readonly voterRepository: Repository<Voter>,
+    @InjectRepository(StudentProfile)
+    private readonly studentProfileRepository: Repository<StudentProfile>,
 
-    @InjectRepository(Judge)
-    private readonly judgeRepository: Repository<Judge>,
-
-    @InjectRepository(Contestant)
-    private readonly contestantRepository: Repository<Contestant>,
+    @InjectRepository(TeacherProfile)
+    private readonly teacherProfileRepository: Repository<TeacherProfile>,
 
     private jwtService: JwtService,
     private mailService: MailService,
     private cloudinaryUploadService: CloudinaryUploadService,
   ) {}
 
-  private readonly contestant_password = process.env.CONTESTANT_PASSWORD;
-
-  async create_Voter(createVoterDto: CreateVoterDto) {
-    if (!createVoterDto.password) {
-      throw new BadRequestException('Password is required');
-    }
-    // Hash password
-    if (!createVoterDto.password) {
-      throw new BadRequestException('Password is required');
-    }
-    const hashedPassword = await hash(createVoterDto.password, 10);
-
-    const { existingRole, token } = await this.validateAndPrepareUser(
-      createVoterDto as CreateUserDto,
-      'voter',
-    );
-
-    // Create user
-    const account = this.userRepository.create({
-      ...createVoterDto,
-      password: hashedPassword,
-      verificationToken: token,
-      role: existingRole,
-    });
-
-    const newAccount = await this.userRepository.save(account);
-
-    // Create voter profile
-    const voterProfile = this.voterRepository.create({
-      user: newAccount,
-      votesCast: 0, // Look into this
-      votingHistory: [], // Look into this
-      voterLevel: 1, // Look into this
-    });
-
-    const savedProfile = await this.voterRepository.save(voterProfile);
-
-    // Update user with profile reference
-    newAccount.voterProfile = savedProfile;
-    await this.userRepository.save(newAccount);
-
-    // Send confirmation email
-    await this.mailService.sendAuthEmailConfirmation(
-      createVoterDto,
-      true,
-      token,
-    );
-
-    return {
-      id: newAccount.id,
-      firstName: newAccount.firstName,
-      lastName: newAccount.lastName,
-      email: newAccount.email,
-      phoneNumber: newAccount.phoneNumber,
-      role: {
-        id: newAccount.role.id,
-        name: newAccount.role.name,
-      },
-      status: newAccount.status,
-      profileType: 'voter',
-      profile: savedProfile,
-    };
+  async create_student(createStudentDto: CreateStudentDto) {
+    return {};
   }
 
-  async create_Contestant(
-    createContestantDto: CreateContestantDto,
-    profileImage: Express.Multer.File,
-    portfolioImages: Express.Multer.File[],
-  ) {
-    const { existingRole, token } = await this.validateAndPrepareUser(
-      createContestantDto as CreateUserDto,
-      'contestant',
-    );
-
-    const unhashedPassword = String(this.contestant_password);
-
-    // Hash password
-    createContestantDto.password = await hash(unhashedPassword, 10);
-
-    // Upload image to Cloudinary
-    let imageUrl = '';
-    if (profileImage) {
-      const uploadResult = await this.cloudinaryUploadService.uploadFile(
-        profileImage,
-        'sketch2finish_Users',
-      );
-
-      imageUrl = uploadResult;
-    } else {
-      throw new NotFoundException('Profile image not included');
-    }
-
-    // Upload portfolio images if available
-    const portfolioImageUrls: string[] = [];
-    if (portfolioImages && portfolioImages.length > 0) {
-      for (const Image of portfolioImages) {
-        const uploadResult = await this.cloudinaryUploadService.uploadFile(
-          Image,
-          'sketch2finish_Portfolios',
-        );
-        portfolioImageUrls.push(uploadResult);
-      }
-    }
-
-    // Create user
-    const account = this.userRepository.create({
-      ...createContestantDto,
-      verificationToken: token,
-      role: existingRole,
-      profileImage: imageUrl,
-      gender: createContestantDto.gender?.toLowerCase() as 'male' | 'female',
-    });
-
-    const newAccount = await this.userRepository.save(account);
-
-    // Create contestant profile
-    const contestantProfile = this.contestantRepository.create({
-      user: newAccount,
-      totalVotes: 0, // Look into this
-    });
-
-    const profile = await this.contestantRepository.save(contestantProfile);
-
-    // Update user with profile reference
-    if (newAccount) {
-      newAccount.contestantProfile = profile;
-      newAccount.contestantProfile.portfolioImages = portfolioImageUrls;
-      newAccount.isVerified = true;
-      newAccount.verificationToken = null;
-      newAccount.status = 'inactive';
-      await this.userRepository.save(newAccount);
-    }
-    // Send confirmation email
-    await this.mailService.confirmContestantAccount(newAccount, true);
-
-    return {
-      id: newAccount.id,
-      firstName: newAccount.firstName,
-      lastName: newAccount.lastName,
-      email: newAccount.email,
-      phoneNumber: newAccount.phoneNumber,
-      role: {
-        id: newAccount.role.id,
-        name: newAccount.role.name,
-      },
-      status: newAccount.status,
-      profileType: 'contestant',
-      profile,
-    };
+  async create_Teacher(createTeacherDto: CreateTeacherDto) {
+    return {};
   }
 
   async create_Admin(createAdminDto: CreateAdminDto) {
@@ -239,23 +92,23 @@ export class AuthService {
     const newAccount = await this.userRepository.save(account);
 
     // Create admin profile
-    const adminProfile = this.adminRepository.create({
+    const adminProfile = this.adminProfileRepository.create({
       user: newAccount,
       permissions: ['view_leaderboard'], // Look into this
     });
 
-    const savedProfile = await this.adminRepository.save(adminProfile);
+    const savedProfile = await this.adminProfileRepository.save(adminProfile);
 
     // Update user with profile reference
     newAccount.adminProfile = savedProfile;
     await this.userRepository.save(newAccount);
 
     // Send confirmation email
-    await this.mailService.sendAuthEmailConfirmation(
-      createAdminDto,
-      true,
-      token,
-    );
+    // await this.mailService.sendAuthEmailConfirmation(
+    //   createAdminDto,
+    //   true,
+    //   token,
+    // );
 
     return {
       id: newAccount.id,
@@ -270,69 +123,6 @@ export class AuthService {
       status: newAccount.status,
       profileType: 'admin',
       profile: savedProfile,
-    };
-  }
-
-  async create_Judge(createJudgeDto: CreateJudgeDto) {
-    if (!createJudgeDto.password) {
-      throw new BadRequestException('Password is required');
-    }
-
-    // Hash password
-    if (!createJudgeDto.password) {
-      throw new BadRequestException('Password is required');
-    }
-    const hashedPassword = await hash(createJudgeDto.password, 10);
-
-    const { existingRole, token } = await this.validateAndPrepareUser(
-      createJudgeDto,
-      'judge',
-    );
-
-    // Create user
-    const account = this.userRepository.create({
-      ...createJudgeDto,
-      password: hashedPassword,
-      verificationToken: token,
-      role: existingRole,
-    });
-
-    const newAccount = await this.userRepository.save(account);
-
-    // Create judge profile
-    const judgeProfile = this.judgeRepository.create({
-      user: newAccount,
-      casesReviewed: 0, // Look into this
-      scoringHistory: [], // Look into this
-      activeSeasons: 0, // Look into this
-    });
-
-    const savedProfile = await this.judgeRepository.save(judgeProfile);
-
-    // Update user with profile reference
-    newAccount.judgeProfile = savedProfile;
-    await this.userRepository.save(newAccount);
-
-    // Send confirmation email
-    await this.mailService.sendAuthEmailConfirmation(
-      createJudgeDto,
-      true,
-      token,
-    );
-
-    return {
-      id: newAccount.id,
-      firstName: newAccount.firstName,
-      lastName: newAccount.lastName,
-      email: newAccount.email,
-      phoneNumber: newAccount.phoneNumber,
-      role: {
-        id: newAccount.role.id,
-        name: newAccount.role.name,
-      },
-      status: newAccount.status,
-      profileType: 'judge',
-      profileId: savedProfile.id,
     };
   }
 
@@ -368,7 +158,7 @@ export class AuthService {
     await this.userRepository.save(account);
 
     // const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
-    await this.mailService.sendPasswordResetEmail(account.email, resetToken);
+    // await this.mailService.sendPasswordResetEmail(account.email, resetToken);
     return { message: 'Reset link sent to verified email' };
   }
 
@@ -414,13 +204,13 @@ export class AuthService {
       user.isVerified = true;
       user.verificationToken = null;
       savedUser = await this.userRepository.save(user);
-      if (savedUser) {
-        await this.mailService.sendPasswordAfterVerifyingEmail(
-          email,
-          user,
-          true,
-        );
-      }
+      // if (savedUser) {
+      //   await this.mailService.sendPasswordAfterVerifyingEmail(
+      //     email,
+      //     user,
+      //     true,
+      //   );
+      // }
     }
     return savedUser;
   }
@@ -444,13 +234,13 @@ export class AuthService {
       user.resetTokenExpiry = null;
       user.isResetTokenVerified = true;
       savedUser = await this.userRepository.save(user);
-      if (savedUser) {
-        await this.mailService.sendResetTokenConfirmation(
-          resetTokenDto.email,
-          user,
-          true,
-        );
-      }
+      // if (savedUser) {
+      //   await this.mailService.sendResetTokenConfirmation(
+      //     resetTokenDto.email,
+      //     user,
+      //     true,
+      //   );
+      // }
     }
     return savedUser;
   }
@@ -471,26 +261,22 @@ export class AuthService {
         password: true,
         status: true,
         isVerified: true,
-        voterProfile: {
+        studentProfile: {
           id: true,
         },
-        contestantProfile: {
+        teacherProfile: {
           id: true,
         },
         adminProfile: {
           id: true,
         },
-        judgeProfile: {
-          id: true,
-        },
       },
-      relations: [
-        'role',
-        'voterProfile',
-        'contestantProfile',
-        'adminProfile',
-        'judgeProfile',
-      ],
+      relations: {
+        role: true,
+        studentProfile: true,
+        teacherProfile: true,
+        adminProfile: true,
+      },
     });
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
