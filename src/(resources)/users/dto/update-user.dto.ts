@@ -1,165 +1,447 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsEmail,
+  IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
+  IsInt,
   IsNumber,
-  IsEnum,
-  IsArray,
+  IsUrl,
 } from 'class-validator';
 
-// ------------------------- PROFILE DTOs ------------------------- //
-
-export class TeacherProfileDto {
-  @ApiPropertyOptional({
-    description: 'Total votes cast by the voter',
-    example: 50,
+// ------------------ Student Profile DTOs ------------------ //
+export class CreateStudentProfileDto {
+  @ApiProperty({
+    description: 'Student phone number',
+    example: '+1234567890',
   })
-  @IsOptional()
-  @IsNumber()
-  votesCast?: number;
+  @IsNotEmpty()
+  @IsString()
+  phoneNumber: string;
 
   @ApiPropertyOptional({
-    description: 'Voting history',
-    example: [{ contestantId: 'abc123', votes: 5, date: '2025-01-01' }],
-  })
-  @IsOptional()
-  @IsArray()
-  votingHistory?: { contestantId: string; votes: number; date: string }[];
-
-  @ApiPropertyOptional({
-    description: 'Voter level (loyalty ranking)',
-    example: 3,
-  })
-  @IsOptional()
-  @IsNumber()
-  voterLevel?: number;
-
-  @ApiPropertyOptional({
-    description: 'Last voted contestant ID',
-    example: 'contestant123',
+    description: 'Profile picture URL',
+    example: 'https://example.com/images/profile.jpg',
   })
   @IsOptional()
   @IsString()
-  lastVotedContestant?: string;
+  profilePicture?: string;
+
+  @ApiPropertyOptional({
+    description: 'Student grade level',
+    example: '10th Grade',
+  })
+  @IsOptional()
+  @IsString()
+  gradeLevel?: string;
+
+  @ApiPropertyOptional({
+    description: 'Preferred subjects (comma separated)',
+    example: 'Mathematics, Physics, Computer Science',
+  })
+  @IsOptional()
+  @IsString()
+  preferredSubjects?: string;
+
+  @ApiPropertyOptional({
+    description: 'Learning goals',
+    example: 'Improve math skills and prepare for SAT',
+  })
+  @IsOptional()
+  @IsString()
+  learningGoals?: string;
+
+  @ApiPropertyOptional({
+    description: 'Total lessons completed',
+    example: '42',
+  })
+  @IsOptional()
+  @IsString()
+  totalLessonsCompleted?: string;
+
+  @ApiPropertyOptional({
+    description: 'Average quiz score',
+    example: '85%',
+  })
+  @IsOptional()
+  @IsString()
+  averageQuizScore?: string;
+
+  @ApiPropertyOptional({
+    description: 'Badges earned',
+    example: 'Math Wizard, Science Explorer, Language Master',
+  })
+  @IsOptional()
+  @IsString()
+  badgesEarned?: string;
 }
 
-export class StudentProfileDto {
-  @ApiPropertyOptional({ description: 'Gender', example: 'Male' })
-  @IsOptional()
-  @IsEnum(['male', 'female'])
-  gender?: 'male' | 'female';
-
-  @ApiPropertyOptional({ description: 'Height in cm', example: '180cm' })
-  @IsOptional()
-  @IsString()
-  height?: string;
-
+export class UpdateStudentProfileDto {
   @ApiPropertyOptional({
-    description: 'Years of experience',
-    example: '3',
+    description: 'Student phone number',
+    example: '+1234567890',
   })
   @IsOptional()
   @IsString()
-  experience?: string;
-
-  @ApiPropertyOptional({ description: 'Nationality', example: 'Nigerian' })
-  @IsOptional()
-  @IsString()
-  nationality?: string;
+  phoneNumber?: string;
 
   @ApiPropertyOptional({
-    description: 'Instagram handle',
-    example: '@fashionista',
+    description: 'Profile picture URL',
+    example: 'https://example.com/images/profile.jpg',
   })
   @IsOptional()
   @IsString()
-  instagram?: string;
-
-  @ApiPropertyOptional({ description: 'TikTok handle', example: '@dancer123' })
-  @IsOptional()
-  @IsString()
-  tiktok?: string;
-
-  @ApiPropertyOptional({ description: 'Current occupation', example: 'Model' })
-  @IsOptional()
-  @IsString()
-  currentOccupation?: string;
+  profilePicture?: string;
 
   @ApiPropertyOptional({
-    description: 'Motivation for joining',
-    example: 'To inspire young models',
+    description: 'Student grade level',
+    example: '10th Grade',
   })
   @IsOptional()
   @IsString()
-  motivation?: string;
+  gradeLevel?: string;
 
   @ApiPropertyOptional({
-    description: 'Short biography',
-    example: 'Passionate model and artist',
+    description: 'Preferred subjects (comma separated)',
+    example: 'Mathematics, Physics, Computer Science',
+  })
+  @IsOptional()
+  @IsString()
+  preferredSubjects?: string;
+
+  @ApiPropertyOptional({
+    description: 'Learning goals',
+    example: 'Improve math skills and prepare for SAT',
+  })
+  @IsOptional()
+  @IsString()
+  learningGoals?: string;
+
+  @ApiPropertyOptional({
+    description: 'Total lessons completed',
+    example: '42',
+  })
+  @IsOptional()
+  @IsString()
+  totalLessonsCompleted?: string;
+
+  @ApiPropertyOptional({
+    description: 'Average quiz score',
+    example: '85%',
+  })
+  @IsOptional()
+  @IsString()
+  averageQuizScore?: string;
+
+  @ApiPropertyOptional({
+    description: 'Badges earned',
+    example: 'Math Wizard, Science Explorer, Language Master',
+  })
+  @IsOptional()
+  @IsString()
+  badgesEarned?: string;
+}
+
+export class StudentProfileResponseDto {
+  @IsUUID()
+  id: string;
+
+  @IsString()
+  phoneNumber: string;
+
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @IsOptional()
+  @IsString()
+  gradeLevel?: string;
+
+  @IsOptional()
+  @IsString()
+  preferredSubjects?: string;
+
+  @IsOptional()
+  @IsString()
+  learningGoals?: string;
+
+  @IsOptional()
+  @IsString()
+  totalLessonsCompleted?: string;
+
+  @IsOptional()
+  @IsString()
+  averageQuizScore?: string;
+
+  @IsOptional()
+  @IsString()
+  badgesEarned?: string;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ------------------ Teacher Profile DTOs ------------------ //
+export class CreateTeacherProfileDto {
+  @ApiProperty({
+    description: 'Teacher phone number',
+    example: '+1234567890',
+  })
+  @IsNotEmpty()
+  @IsString()
+  phoneNumber: string;
+
+  @ApiPropertyOptional({
+    description: 'Profile picture URL',
+    example: 'https://example.com/images/teacher.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @ApiPropertyOptional({
+    description: 'Teacher biography',
+    example: 'Experienced math teacher with 10+ years in secondary education',
   })
   @IsOptional()
   @IsString()
   bio?: string;
 
   @ApiPropertyOptional({
-    description: 'Current competition ranking',
-    example: 1,
-  })
-  @IsOptional()
-  @IsNumber()
-  ranking?: number;
-
-  @ApiPropertyOptional({ description: 'Total votes received', example: 5000 })
-  @IsOptional()
-  @IsNumber()
-  totalVotes?: number;
-
-  @ApiPropertyOptional({
-    description: 'Profile images',
-    example: 'image1.jpg',
-  })
-  @IsOptional()
-  @IsArray()
-  profileImage?: Express.Multer.File;
-
-  @ApiPropertyOptional({
-    description: 'Portfolio images',
-    type: 'array',
-    items: { type: 'string', format: 'binary' },
-  })
-  @IsOptional()
-  @IsArray()
-  portfolioImages?: Express.Multer.File[];
-}
-
-export class AdminProfileDto {
-  @ApiPropertyOptional({
-    description: 'Department within the company',
-    example: 'Marketing',
-    enum: ['Operations', 'Finance', 'Marketing', 'Tech Support'],
+    description: 'Subjects taught (comma separated)',
+    example: 'Algebra, Calculus, Statistics',
   })
   @IsOptional()
   @IsString()
-  department?: 'Operations' | 'Finance' | 'Marketing' | 'Tech Support';
+  subjectsTaught?: string;
 
   @ApiPropertyOptional({
-    description: 'Permissions granted',
-    example: ['manage_users', 'approve_votes'],
+    description: 'Education level',
+    example: 'Masters in Mathematics Education',
   })
   @IsOptional()
-  @IsArray()
-  permissions?: (
-    | 'manage_users'
-    | 'approve_votes'
-    | 'view_leaderboard'
-    | 'ban_users'
-  )[];
+  @IsString()
+  educationLevel?: string;
 
   @ApiPropertyOptional({
-    description: 'Last login date',
+    description: 'Years of teaching experience',
+    example: 8,
+  })
+  @IsOptional()
+  @IsInt()
+  teachingExperience?: number;
+
+  @ApiPropertyOptional({
+    description: 'Educational certifications (comma separated)',
+    example: 'State Teaching License, Advanced Instructional Design',
+  })
+  @IsOptional()
+  @IsString()
+  certifications?: string;
+
+  @ApiPropertyOptional({
+    description: 'Teacher rating',
+    example: '4.8/5.0',
+  })
+  @IsOptional()
+  @IsString()
+  rating?: string;
+
+  @ApiPropertyOptional({
+    description: 'Total number of courses created',
+    example: 12,
+  })
+  @IsOptional()
+  @IsInt()
+  totalCourses?: number;
+}
+
+export class UpdateTeacherProfileDto {
+  @ApiPropertyOptional({
+    description: 'Teacher phone number',
+    example: '+1234567890',
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Profile picture URL',
+    example: 'https://example.com/images/teacher.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @ApiPropertyOptional({
+    description: 'Teacher biography',
+    example: 'Experienced math teacher with 10+ years in secondary education',
+  })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional({
+    description: 'Subjects taught (comma separated)',
+    example: 'Algebra, Calculus, Statistics',
+  })
+  @IsOptional()
+  @IsString()
+  subjectsTaught?: string;
+
+  @ApiPropertyOptional({
+    description: 'Education level',
+    example: 'Masters in Mathematics Education',
+  })
+  @IsOptional()
+  @IsString()
+  educationLevel?: string;
+
+  @ApiPropertyOptional({
+    description: 'Years of teaching experience',
+    example: 8,
+  })
+  @IsOptional()
+  @IsInt()
+  teachingExperience?: number;
+
+  @ApiPropertyOptional({
+    description: 'Educational certifications (comma separated)',
+    example: 'State Teaching License, Advanced Instructional Design',
+  })
+  @IsOptional()
+  @IsString()
+  certifications?: string;
+
+  @ApiPropertyOptional({
+    description: 'Teacher rating',
+    example: '4.8/5.0',
+  })
+  @IsOptional()
+  @IsString()
+  rating?: string;
+
+  @ApiPropertyOptional({
+    description: 'Total number of courses created',
+    example: 12,
+  })
+  @IsOptional()
+  @IsInt()
+  totalCourses?: number;
+}
+
+export class TeacherProfileResponseDto {
+  @IsUUID()
+  id: string;
+
+  @IsString()
+  phoneNumber: string;
+
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @IsOptional()
+  @IsString()
+  subjectsTaught?: string;
+
+  @IsOptional()
+  @IsString()
+  educationLevel?: string;
+
+  @IsOptional()
+  @IsInt()
+  teachingExperience?: number;
+
+  @IsOptional()
+  @IsString()
+  certifications?: string;
+
+  @IsOptional()
+  @IsString()
+  rating?: string;
+
+  @IsOptional()
+  @IsInt()
+  totalCourses?: number;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ------------------ Admin Profile DTOs ------------------ //
+export class CreateAdminProfileDto {
+  @ApiProperty({
+    description: 'Admin phone number',
+    example: '+1234567890',
+  })
+  @IsNotEmpty()
+  @IsString()
+  phoneNumber: string;
+
+  @ApiPropertyOptional({
+    description: 'Profile picture URL',
+    example: 'https://example.com/images/admin.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last login timestamp',
     example: '2025-01-15T10:30:00Z',
   })
   @IsOptional()
   @IsString()
   lastLogin?: string;
+}
+
+export class UpdateAdminProfileDto {
+  @ApiPropertyOptional({
+    description: 'Admin phone number',
+    example: '+1234567890',
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Profile picture URL',
+    example: 'https://example.com/images/admin.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @ApiPropertyOptional({
+    description: 'Last login timestamp',
+    example: '2025-01-15T10:30:00Z',
+  })
+  @IsOptional()
+  @IsString()
+  lastLogin?: string;
+}
+
+export class AdminProfileResponseDto {
+  @IsUUID()
+  id: string;
+
+  @IsString()
+  phoneNumber: string;
+
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @IsOptional()
+  @IsString()
+  lastLogin?: string;
+
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -4,6 +4,8 @@ import {
   Column,
   OneToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -17,17 +19,35 @@ export class StudentProfile {
   @JoinColumn()
   user: User;
 
-  @Column({ nullable: true })
-  votesCast?: number;
-
-  @Column('json', { nullable: true })
-  votingHistory?: { contestantId: string; votes: number; date: string }[];
+  @Column()
+  phoneNumber?: string;
 
   @Column({ nullable: true })
-  voterLevel?: number;
+  profilePicture?: string;
 
   @Column({ nullable: true })
-  lastVotedContestant?: string;
+  gradeLevel: string;
+
+  @Column({ nullable: true, type: 'text' })
+  preferredSubjects: string;
+
+  @Column({ nullable: true, type: 'text' })
+  learningGoals: string;
+
+  @Column({ nullable: true, type: 'text' })
+  totalLessonsCompleted: string;
+
+  @Column({ nullable: true, type: 'text' })
+  averageQuizScore: string;
+
+  @Column({ nullable: true, type: 'text' })
+  badgesEarned: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
 
 // ------------------ Contestant Profile ------------------ //
@@ -40,38 +60,38 @@ export class TeacherProfile {
   @JoinColumn()
   user: User;
 
-  @Column({ type: 'enum', enum: ['male', 'female'], nullable: true })
-  gender?: 'male' | 'female';
+  @Column()
+  phoneNumber?: string;
 
   @Column({ nullable: true })
-  height?: string;
+  profilePicture?: string;
 
-  @Column({ nullable: true })
-  nationality?: string;
-
-  @Column({ nullable: true })
-  instagram?: string;
-
-  @Column({ nullable: true })
-  tiktok?: string;
-
-  @Column({ nullable: true })
-  currentOccupation?: string;
-
-  @Column({ nullable: true })
-  motivation?: string;
-
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'text' })
   bio?: string;
 
-  @Column({ nullable: true })
-  ranking?: number;
+  @Column({ nullable: true, type: 'text' })
+  subjectsTaught?: string;
 
   @Column({ nullable: true })
-  totalVotes?: number;
+  educationLevel?: string;
 
-  @Column('json', { nullable: true })
-  portfolioImages?: string[];
+  @Column({ nullable: true, type: 'int' })
+  teachingExperience?: number;
+
+  @Column({ nullable: true, type: 'text' })
+  certifications?: string;
+
+  @Column({ nullable: true, type: 'text' })
+  rating?: string;
+
+  @Column({ nullable: true, type: 'int' })
+  totalCourses?: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
 
 // ------------------ Admin Profile ------------------ //
@@ -84,21 +104,18 @@ export class AdminProfile {
   @JoinColumn()
   user: User;
 
-  @Column({
-    type: 'enum',
-    enum: ['Operations', 'Finance', 'Marketing', 'Tech Support'],
-    nullable: true,
-  })
-  department?: 'Operations' | 'Finance' | 'Marketing' | 'Tech Support';
+  @Column()
+  phoneNumber?: string;
 
-  @Column('json', { nullable: true })
-  permissions?: (
-    | 'manage_users'
-    | 'approve_votes'
-    | 'view_leaderboard'
-    | 'ban_users'
-  )[];
+  @Column({ nullable: true })
+  profilePicture?: string;
 
   @Column({ nullable: true })
   lastLogin?: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

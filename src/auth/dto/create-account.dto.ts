@@ -3,9 +3,9 @@ import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsEmail, IsString, IsOptional } from 'class-validator';
 import { Role } from 'src/(resources)/role/entities/role.entity';
 import {
-  AdminProfileDto,
-  StudentProfileDto,
-  TeacherProfileDto,
+  CreateAdminProfileDto,
+  CreateStudentProfileDto,
+  CreateTeacherProfileDto,
 } from 'src/(resources)/users/dto/update-user.dto';
 
 export class CreateUserDto {
@@ -61,15 +61,15 @@ export class CreateUserDto {
 
 export class CreateAdminDto extends IntersectionType(
   CreateUserDto,
-  AdminProfileDto,
+  CreateAdminProfileDto,
 ) {}
 
 export class CreateStudentDto extends IntersectionType(
   CreateUserDto,
-  StudentProfileDto,
+  CreateStudentProfileDto,
 ) {}
 
 export class CreateTeacherDto extends IntersectionType(
   CreateUserDto,
-  TeacherProfileDto,
+  CreateTeacherProfileDto,
 ) {}

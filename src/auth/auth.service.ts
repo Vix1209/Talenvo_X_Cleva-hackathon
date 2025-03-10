@@ -94,7 +94,8 @@ export class AuthService {
     // Create admin profile
     const adminProfile = this.adminProfileRepository.create({
       user: newAccount,
-      permissions: ['view_leaderboard'], // Look into this
+      phoneNumber: createAdminDto.phoneNumber,
+      profilePicture: createAdminDto.profilePicture,
     });
 
     const savedProfile = await this.adminProfileRepository.save(adminProfile);
