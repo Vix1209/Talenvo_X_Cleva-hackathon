@@ -1,0 +1,665 @@
+{{#if sendUserWelcome}}
+  <div
+    style='
+      font-family: Arial, sans-serif;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ddd;
+    '
+  >
+    <div style='text-align: center;'>
+      <img
+        src='https://yourcompanylogo.com/logo.png'
+        alt='Sketch2Finish Logo'
+        style='max-width: 120px; margin-bottom: 20px;'
+      />
+    </div>
+
+    <h2 style='color: #ff6600; text-align: center;'>
+      Welcome to Sketch2Finish Fashion Reality Show,
+      {{name}}! 🎉
+    </h2>
+
+    <p style='text-align: center; font-size: 1.1em;'>
+      We're excited to have you join our community. Before getting started,
+      please verify your email.
+    </p>
+
+    <div
+      style='background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center; position: relative;'
+    >
+      <span
+        id='verification-token'
+        style='font-family: monospace; font-size: 16px; font-weight: bold; color: #333;'
+      >{{token}}</span>
+
+      <br />
+      <hr />
+
+      <div
+        style='background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center;'
+      >
+        <p style='margin-top: 10px; font-size: 12px; color: #666;'>(Select the
+          token and press Ctrl+C or Cmd+C to copy)</p>
+      </div>
+    </div>
+
+    <p style='text-align: center; font-size: 0.9em; color: #777;'>
+      If you didn't sign up for Sketch2Finish, please ignore this email.
+    </p>
+
+    <p
+      style='margin-top: 30px; font-size: 0.9em; color: #777; text-align: center;'
+    >
+      <em>Best regards,</em><br />
+      <strong>The Sketch2Finish Team</strong>
+    </p>
+
+    <!-- Social Media Links -->
+    <div style='text-align: center; margin-top: 20px;'>
+      <p style='color: #555; font-size: 0.9em;'>Connect with us:</p>
+      <a
+        href='https://facebook.com/Sketch2Finish'
+        target='_blank'
+        style='margin: 0 10px;'
+      >
+        <img
+          src='https://img.icons8.com/ios-filled/30/ff6600/facebook.png'
+          alt='Facebook'
+        />
+      </a>
+      <a
+        href='https://twitter.com/Sketch2Finish'
+        target='_blank'
+        style='margin: 0 10px;'
+      >
+        <img
+          src='https://img.icons8.com/ios-filled/30/ff6600/twitter.png'
+          alt='Twitter'
+        />
+      </a>
+      <a
+        href='https://instagram.com/Sketch2Finish'
+        target='_blank'
+        style='margin: 0 10px;'
+      >
+        <img
+          src='https://img.icons8.com/ios-filled/30/ff6600/instagram-new.png'
+          alt='Instagram'
+        />
+      </a>
+      <a
+        href='https://linkedin.com/company/Sketch2Finish'
+        target='_blank'
+        style='margin: 0 10px;'
+      >
+        <img
+          src='https://img.icons8.com/ios-filled/30/ff6600/linkedin.png'
+          alt='LinkedIn'
+        />
+      </a>
+    </div>
+  </div>
+{{/if}}
+
+{{#if sendVerificationMail}}
+  <div
+    style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto; text-align: center;'
+  >
+    <h2 style='color: #FF6600;'>Email Verified Successfully! 🎉</h2>
+
+    <p>Dear {{name}},</p>
+
+    <p>Your email has been successfully verified. You can now log in and vote
+      your favourite contestant</p>
+
+    <div style='text-align: center; margin: 20px 0;'>
+      <a
+        href='{{loginUrl}}'
+        style='
+          background-color: #ff6600;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 12px 20px;
+          border-radius: 5px;
+          font-size: 1.1em;
+          display: inline-block;
+          font-weight: bold;
+        '
+      >
+        Go to Dashboard
+      </a>
+    </div>
+
+    <p style='margin-top: 20px;'>Best Regards,<br /><strong>The Lunozart Team</strong></p>
+
+    <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;' />
+
+    <p>Follow us on:</p>
+    <p>
+      <a
+        href='https://twitter.com/Lunozart'
+        style='margin-right: 10px; text-decoration: none;'
+      >
+        <img
+          src='https://img.icons8.com/color/30/000000/twitter.png'
+          alt='Twitter'
+        />
+      </a>
+      <a
+        href='https://facebook.com/Lunozart'
+        style='margin-right: 10px; text-decoration: none;'
+      >
+        <img
+          src='https://img.icons8.com/color/30/000000/facebook.png'
+          alt='Facebook'
+        />
+      </a>
+      <a href='https://instagram.com/Lunozart' style='text-decoration: none;'>
+        <img
+          src='https://img.icons8.com/color/30/000000/instagram-new.png'
+          alt='Instagram'
+        />
+      </a>
+    </p>
+  </div>
+
+{{/if}}
+
+{{#if resetToken}}
+  <div
+    style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto;'
+  >
+    <h2 style='color: #FF6600; text-align: center;'>Password Reset Request</h2>
+
+    <p>Hi there,</p>
+
+    <p>
+      You requested a password reset. Please click the button below to reset
+      your password:
+    </p>
+
+    <div
+      style='background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center; position: relative;'
+    >
+      <span
+        id='verification-token'
+        style='font-family: monospace; font-size: 16px; font-weight: bold; color: #333;'
+      >{{resetToken}}</span>
+
+      <br />
+      <hr />
+
+      <div
+        style='background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center;'
+      >
+        <p style='margin-top: 10px; font-size: 12px; color: #666;'>(Select the
+          token and press Ctrl+C or Cmd+C to copy)</p>
+      </div>
+    </div>
+    <p>
+      This link will expire in
+      <strong>one hour</strong>. If you didn’t request a password reset, you can
+      safely ignore this email.
+    </p>
+
+    <p
+      style='margin-top: 20px; font-size: 0.9em; color: #777; text-align: center;'
+    >
+      Thank you,<br />
+      <strong>The Sketch2Finish FS Team</strong>
+    </p>
+  </div>
+{{/if}}
+
+{{#if sendResetMail}}
+  <div
+    style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto; text-align: center;'
+  >
+    <h2 style='color: #FF6600;'>Password Reset Successfully! 🎉</h2>
+
+    <p>Dear {{name}},</p>
+
+    <p>Your password has been successfully reset. Try to log in again</p>
+
+    <div style='text-align: center; margin: 20px 0;'>
+      <a
+        href='{{loginUrl}}'
+        style='
+          background-color: #ff6600;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 12px 20px;
+          border-radius: 5px;
+          font-size: 1.1em;
+          display: inline-block;
+          font-weight: bold;
+        '
+      >
+        Go to Dashboard
+      </a>
+    </div>
+
+    <p style='margin-top: 20px;'>Best Regards,<br /><strong>The Lunozart Team</strong></p>
+
+    <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;' />
+
+    <p>Follow us on:</p>
+    <p>
+      <a
+        href='https://twitter.com/Lunozart'
+        style='margin-right: 10px; text-decoration: none;'
+      >
+        <img
+          src='https://img.icons8.com/color/30/000000/twitter.png'
+          alt='Twitter'
+        />
+      </a>
+      <a
+        href='https://facebook.com/Lunozart'
+        style='margin-right: 10px; text-decoration: none;'
+      >
+        <img
+          src='https://img.icons8.com/color/30/000000/facebook.png'
+          alt='Facebook'
+        />
+      </a>
+      <a href='https://instagram.com/Lunozart' style='text-decoration: none;'>
+        <img
+          src='https://img.icons8.com/color/30/000000/instagram-new.png'
+          alt='Instagram'
+        />
+      </a>
+    </p>
+  </div>
+
+{{/if}}
+
+{{#if activateContestant}}
+  <html lang='en'>
+    <head>
+      <meta charset='UTF-8' />
+      <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+      <title>Contestant Application Review</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 25px;
+        }
+        .logo {
+          max-width: 150px;
+          height: auto;
+        }
+        .contestant-info {
+          background-color: #f7f7f7;
+          padding: 15px;
+          border-radius: 5px;
+          margin-bottom: 20px;
+        }
+        .section {
+          border-bottom: 1px solid #eee;
+          padding-bottom: 10px;
+          margin-bottom: 15px;
+        }
+        .section-title {
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #444;
+        }
+        .actions {
+          text-align: center;
+          margin: 30px 0;
+        }
+        .btn {
+          display: inline-block;
+          padding: 12px 25px;
+          margin: 0 10px;
+          text-decoration: none;
+          font-weight: bold;
+          border-radius: 5px;
+          text-align: center;
+        }
+        .approve-btn {
+          background-color: #28a745;
+          color: white;
+        }
+        .decline-btn {
+          background-color: #dc3545;
+          color: white;
+        }
+        .gallery {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 10px;
+        }
+        .gallery img {
+          width: 100px;
+          height: 100px;
+          object-fit: cover;
+          border-radius: 4px;
+        }
+        .tag-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+        }
+        .tag {
+          background-color: #e9ecef;
+          padding: 3px 8px;
+          border-radius: 15px;
+          font-size: 12px;
+        }
+        .footer {
+          font-size: 12px;
+          text-align: center;
+          margin-top: 40px;
+          color: #777;
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class='header'>
+        <img
+          src='/api/placeholder/150/50'
+          alt='Competition Logo'
+          class='logo'
+        />
+        <h2>Contestant Application Review</h2>
+      </div>
+
+      <p>Hello {{adminName}},</p>
+
+      <p>A new contestant application requires your review:</p>
+
+      <div class='contestant-info'>
+        <div class='section'>
+          <div class='section-title'>Personal Information</div>
+          <p><strong>Name:</strong> {{contestantName}}</p>
+          <p><strong>Email:</strong> {{contestantEmail}}</p>
+          <p><strong>Phone:</strong> {{phoneNumber}}</p>
+          <p><strong>Category:</strong> {{category}}</p>
+          <p><strong>Gender:</strong> {{gender}}</p>
+        </div>
+      </div>
+
+      <div class='actions'>
+        <a href='{{approveUrl}}' class='btn approve-btn'>APPROVE CONTESTANT</a>
+        <a href='{{declineUrl}}' class='btn decline-btn'>DECLINE CONTESTANT</a>
+      </div>
+
+      <p>Please review the application and take appropriate action by clicking
+        one of the buttons above.</p>
+
+      <p>Note: This contestant will be automatically added to the
+        {{contestName}}, if approved.</p>
+
+      <div class='footer'>
+        <p>This is an automated email. Please do not reply directly.</p>
+        <p>&copy; {{currentYear}} {{companyName}} - All rights reserved</p>
+      </div>
+    </body>
+  </html>
+{{/if}}
+
+{{#if reviewContestantApplication}}
+  <div>
+    <div class='content'>
+      <p>Dear {{contestantName}},</p>
+
+      <p>Thank you for submitting your application for
+        {{contestName}}. We wanted to inform you that your application is
+        currently under review by our administrative team.</p>
+
+      <h2>Current Status: Under Review</h2>
+
+      <p>Our team is carefully evaluating all submitted applications. We
+        appreciate your patience during this process. You can expect to receive
+        a final decision regarding your application within the next
+        {{expectedReviewDays}}
+        business days.</p>
+
+      <h3>What Happens Next?</h3>
+      <ul>
+        <li>Our admin team will thoroughly review your submitted materials</li>
+        <li>You will receive an email notification once a decision has been made</li>
+        <li>The notification will clearly state whether your application has
+          been approved or declined</li>
+      </ul>
+
+      {{#if additionalInformation}}
+        <p><strong>Additional Notes:</strong> {{additionalInformation}}</p>
+      {{/if}}
+    </div>
+
+    <div class='footer'>
+      <p>If you have any questions about your application, please contact us at
+        <a href='mailto:{{contactEmail}}'>{{contactEmail}}</a>.</p>
+
+      <p>Best regards,<br />
+        {{organizationName}}
+        Admissions Team</p>
+    </div>
+  </div>
+
+{{/if}}
+
+{{#if GoAhead}}
+
+  <html>
+    <head>
+      <meta charset='utf-8' />
+      <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+      <title>Application Approved</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background-color: #4a90e2;
+          color: white;
+          padding: 20px;
+          text-align: center;
+        }
+        .content {
+          padding: 20px;
+          background-color: #f9f9f9;
+        }
+        .credentials {
+          background-color: #fff;
+          border: 1px solid #ddd;
+          padding: 15px;
+          margin: 15px 0;
+          border-radius: 5px;
+        }
+        .attachment-notice {
+          background-color: #fffaed;
+          border: 1px solid #ffe0a3;
+          padding: 15px;
+          margin: 15px 0;
+          border-radius: 5px;
+        }
+        .footer {
+          text-align: center;
+          padding: 20px;
+          font-size: 12px;
+          color: #666;
+        }
+        .button {
+          display: inline-block;
+          background-color: #4a90e2;
+          color: white;
+          text-decoration: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          margin-top: 15px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class='container'>
+        <div class='header'>
+          <h1>Congratulations, {{contestantName}}!</h1>
+        </div>
+        <div class='content'>
+          <p>We are pleased to inform you that your application to participate
+            in the
+            <strong>{{contestName}}</strong>
+            has been
+            <strong>approved</strong>!</p>
+
+          <p>You can now access the contestant portal using the credentials
+            below:</p>
+
+          <div class='credentials'>
+            <p><strong>Email:</strong> {{loginEmail}}</p>
+            <p><strong>Password:</strong> {{password}}</p>
+            <p><em>Note: For security reasons, please change your password after
+                your first login.</em></p>
+          </div>
+
+          <div class="attachment-notice">
+            <p><strong>Important:</strong> We've attached a form to this email that you need to complete and submit. Please download, fill out, and return the attached form before the deadline.</p>
+          </div>
+
+          <p>Click the button below to log in to your contestant account:</p>
+          <a href='{{loginUrl}}' class='button'>Login to Your Account</a>
+
+          <p>Next steps:</p>
+          <ol>
+            <li>Log in to your account using the credentials above</li>
+            <li>Download and complete the attached form</li>
+            <li>Complete your contestant profile</li>
+            <li>Review the competition schedule and guidelines</li>
+            <li>Connect with your assigned mentor</li>
+          </ol>
+
+          <p>We're excited to have you join us for this creative journey!</p>
+
+          <p>Best regards,<br />
+            The
+            {{companyName}}
+            Team</p>
+        </div>
+        <div class='footer'>
+          <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+          <p>This email was sent to
+            {{loginEmail}}
+            because you applied to participate in our reality show.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+{{/if}}
+
+{{#if rejectContestant}}
+
+  <html>
+    <head>
+      <meta charset='utf-8' />
+      <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+      <title>Application Status Update</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background-color: #555;
+          color: white;
+          padding: 20px;
+          text-align: center;
+        }
+        .content {
+          padding: 20px;
+          background-color: #f9f9f9;
+        }
+        .footer {
+          text-align: center;
+          padding: 20px;
+          font-size: 12px;
+          color: #666;
+        }
+        .button {
+          display: inline-block;
+          background-color: #555;
+          color: white;
+          text-decoration: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          margin-top: 15px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class='container'>
+        <div class='header'>
+          <h1>Application Status Update</h1>
+        </div>
+        <div class='content'>
+          <p>Dear {{contestantName}},</p>
+
+          <p>Thank you for your interest in the
+            <strong>{{contestName}}</strong>
+            and for taking the time to submit your application.</p>
+
+          <p>After careful consideration of all applications received, we regret
+            to inform you that we are unable to include you in this edition of
+            the competition.</p>
+
+          <p>The selection process was highly competitive, and many factors were
+            taken into consideration when making our final decisions.</p>
+
+          <p>We encourage you to continue developing your skills and consider
+            applying for future editions of our show or other opportunities
+            within our network.</p>
+
+          <p>Thank you again for your interest in our program.</p>
+
+          <p>Best regards,<br />
+            The
+            {{companyName}}
+            Team</p>
+        </div>
+        <div class='footer'>
+          <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+          <p>This email was sent to you because you applied to participate in
+            our reality show.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+{{/if}}
