@@ -20,14 +20,9 @@ import { Roles } from 'src/auth/customDecorators/roleHandling';
 import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
 
 @GlobalApiResponse()
-@Controller({ path: 'role', version: '1' })
+@Controller({ path: 'admin/role', version: '1' })
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
-
-  // @Post('seed-roles')
-  // async seed() {
-  //   return await this.roleService.seedRoles();
-  // }
 
   @Post()
   @UseGuards(JwtGuard, RolesGuard)

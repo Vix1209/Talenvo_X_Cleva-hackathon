@@ -12,7 +12,7 @@ export class Role {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: 'varchar', default: 'staff', unique: true })
+  @Column({ type: 'varchar', default: 'student', unique: true })
   name!: string;
 
   @Column({ type: 'text', nullable: true })

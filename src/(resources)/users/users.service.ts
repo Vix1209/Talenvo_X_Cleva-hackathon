@@ -50,10 +50,10 @@ export class UsersService {
       // Check if the role exists before trying to access its name
       if (user.role) {
         switch (user.role.name.toLowerCase()) {
-          case 'voter':
+          case 'teacher':
             profile = user.teacherProfile;
             break;
-          case 'contestant':
+          case 'student':
             profile = user.studentProfile;
             break;
           case 'admin':

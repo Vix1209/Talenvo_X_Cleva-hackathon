@@ -48,9 +48,12 @@ async function bootstrap() {
     console.error('Error setting up Swagger:', error);
   }
 
-  // // Get an instance of RoleService and call seedRoles
-  // const roleService = app.get(RoleService);
-  // await roleService.seedRoles();
+  const environment = process.env.NODE_ENV || 'development';
+
+  if (environment !== 'development') {
+    const roleService = app.get(RoleService);
+    await roleService.seedRoles();
+  }
 
   await app.listen(process.env.PORT || 5000);
   const url = await app.getUrl();
