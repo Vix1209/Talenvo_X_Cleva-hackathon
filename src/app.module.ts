@@ -6,6 +6,9 @@ import { UsersModule } from './(resources)/users/users.module';
 import { RoleModule } from './(resources)/role/role.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { CourseModule } from './(resources)/course/course.module';
+import { QuizModule } from './(resources)/quiz/quiz.module';
+import { LessonModule } from './(resources)/lesson/lesson.module';
 
 @Module({
   imports: [
@@ -17,6 +20,9 @@ import { ConfigModule } from '@nestjs/config';
     AuthModule,
     UsersModule,
     RoleModule,
+    CourseModule,
+    QuizModule,
+    LessonModule,
   ],
   providers: [
     Logger,
