@@ -34,7 +34,7 @@ export function createTypeOrmConfig(configService: ConfigService): any {
       driver: require('mysql2'),
     };
   } else {
-    // Production configuration using Aiven MySQL
+    // Production configuration using Cloud Mysql database
     const dbUrl = configService.get('DB_URL');
 
     if (!dbUrl) {

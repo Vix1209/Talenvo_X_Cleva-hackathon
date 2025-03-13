@@ -9,6 +9,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 
 import {
@@ -16,6 +17,8 @@ import {
   StudentProfile,
   AdminProfile,
 } from './user-profile.entity';
+import { Comment } from 'src/(resources)/comment/entities/comment.entity';
+import { AdditionalResource } from 'src/(resources)/additional_resource/entities/additional_resource.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -78,6 +81,18 @@ export class User {
 
   @OneToOne(() => AdminProfile, (admin) => admin.user, { cascade: true })
   adminProfile?: AdminProfile;
+
+  @OneToMany(() => Comment, (comment) => comment.user, { cascade: true })
+  comment?: Comment[];
+
+  @OneToMany(
+    () => AdditionalResource,
+    (resource) => resource.uploadedResources,
+    {
+      cascade: true,
+    },
+  )
+  uploadedResources?: AdditionalResource[];
 
   @CreateDateColumn({
     select: false,

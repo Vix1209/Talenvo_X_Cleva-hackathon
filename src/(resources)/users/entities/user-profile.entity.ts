@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-// ------------------ Voter Profile ------------------ //
+// ------------------ student Profile ------------------ //
 @Entity({ name: 'student_profile' })
 export class StudentProfile {
   @PrimaryGeneratedColumn('uuid')
@@ -50,7 +50,7 @@ export class StudentProfile {
   updatedAt: Date;
 }
 
-// ------------------ Contestant Profile ------------------ //
+// ------------------ teacher Profile ------------------ //
 @Entity({ name: 'teacher_profile' })
 export class TeacherProfile {
   @PrimaryGeneratedColumn('uuid')
