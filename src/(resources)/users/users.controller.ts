@@ -14,7 +14,7 @@ import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/guard/role.guard';
 import { Roles } from 'src/auth/customDecorators/roleHandling';
 
-@Controller('users')
+@Controller({ path: 'users', version: '1' })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
