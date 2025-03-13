@@ -1,10 +1,13 @@
 import { AdditionalResource } from 'src/(resources)/additional_resource/entities/additional_resource.entity';
 import { Comment } from 'src/(resources)/comment/entities/comment.entity';
 import { Quiz } from 'src/(resources)/quiz/entities/quiz.entity';
+import { User } from 'src/(resources)/users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -28,19 +31,21 @@ export class Course {
   topics: string[];
 
   @OneToMany(() => Comment, (comment) => comment.course)
-  comment: Comment[];
+  comments: Comment[];
 
   @OneToMany(() => Quiz, (quiz) => quiz.course)
-  quiz: Quiz[];
+  quizzes: Quiz[];
 
-  @OneToMany(
-    () => AdditionalResource,
-    (resource) => resource.uploadedResources,
-    {
-      cascade: true,
-    },
-  )
-  uploadedResources?: AdditionalResource[];
+  @OneToMany(() => AdditionalResource, (resource) => resource.course, {
+    cascade: true,
+  })
+  additionalResources?: AdditionalResource[];
+
+  @ManyToOne(() => User, (user) => user.courses)
+  @JoinColumn()
+  user: User;
+  @Column()
+  userId: string;
 
   @Column()
   duration: string;

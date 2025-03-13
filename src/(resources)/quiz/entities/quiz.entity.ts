@@ -21,7 +21,7 @@ export class Quiz {
   @Column({ type: 'json' })
   options: string[];
 
-  @ManyToOne(() => Course, (course) => course.quiz)
+  @ManyToOne(() => Course, (course) => course.quizzes)
   @JoinColumn()
   course: Course;
   @Column()

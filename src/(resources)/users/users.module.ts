@@ -9,6 +9,9 @@ import {
   StudentProfile,
   TeacherProfile,
 } from './entities/user-profile.entity';
+import { Comment } from '../comment/entities/comment.entity';
+import { AdditionalResource } from '../additional_resource/entities/additional_resource.entity';
+import { Quiz } from '../quiz/entities/quiz.entity';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import {
       AdminProfile,
       StudentProfile,
       TeacherProfile,
+      Comment,
+      AdditionalResource,
+      Quiz,
     ]),
   ],
   controllers: [UsersController],

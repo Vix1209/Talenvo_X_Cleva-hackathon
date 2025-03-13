@@ -19,6 +19,7 @@ import {
 } from './user-profile.entity';
 import { Comment } from 'src/(resources)/comment/entities/comment.entity';
 import { AdditionalResource } from 'src/(resources)/additional_resource/entities/additional_resource.entity';
+import { Course } from 'src/(resources)/course/entities/course.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -83,16 +84,15 @@ export class User {
   adminProfile?: AdminProfile;
 
   @OneToMany(() => Comment, (comment) => comment.user, { cascade: true })
-  comment?: Comment[];
+  comments?: Comment[];
 
-  @OneToMany(
-    () => AdditionalResource,
-    (resource) => resource.uploadedResources,
-    {
-      cascade: true,
-    },
-  )
-  uploadedResources?: AdditionalResource[];
+  @OneToMany(() => Course, (course) => course.user, { cascade: true })
+  courses?: Course[];
+
+  @OneToMany(() => AdditionalResource, (resource) => resource.uploadedBy, {
+    cascade: true,
+  })
+  uploadedResources: AdditionalResource[];
 
   @CreateDateColumn({
     select: false,

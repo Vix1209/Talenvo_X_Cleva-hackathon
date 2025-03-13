@@ -24,13 +24,13 @@ export class Comment {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Course, (course) => course.comment)
+  @ManyToOne(() => Course, (course) => course.comments)
   @JoinColumn()
   course: Course;
   @Column()
   courseId: string;
 
-  @ManyToOne(() => User, (user) => user.comment)
+  @ManyToOne(() => User, (user) => user.comments)
   @JoinColumn()
   user: User;
   @Column()

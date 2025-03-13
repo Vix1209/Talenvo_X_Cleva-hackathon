@@ -38,7 +38,7 @@ export class AdditionalResource {
   @Column({ nullable: true })
   mimeType: string;
 
-  @ManyToOne(() => Course, (course) => course.uploadedResources)
+  @ManyToOne(() => Course, (course) => course.additionalResources)
   @JoinColumn()
   course: Course;
   @Column()
@@ -46,9 +46,9 @@ export class AdditionalResource {
 
   @ManyToOne(() => User, (user) => user.uploadedResources)
   @JoinColumn()
-  uploadedResources: User;
+  uploadedBy: User;
   @Column()
-  additionalResourcesId: string;
+  userId: string;
 
   @CreateDateColumn()
   createdAt: Date;
