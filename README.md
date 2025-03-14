@@ -1,7 +1,7 @@
-# Talenvo - Educational Platform with Offline Learning Support
+# Edulite - Educational Platform with Offline Learning Support
 
 <p align="center">
-  <img src="https://via.placeholder.com/200x200?text=Talenvo" width="200" alt="Talenvo Logo" />
+  <img src="https://via.placeholder.com/200x200?text=Edulite" width="200" alt="Edulite Logo" />
 </p>
 
 <p align="center">A modern educational platform built with NestJS that supports offline learning, progress tracking, and real-time updates.</p>
@@ -31,7 +31,7 @@
 
 ## Overview
 
-Talenvo is an educational platform designed to provide seamless learning experiences both online and offline. The system allows teachers to create courses with downloadable resources, enables students to access these courses offline, tracks progress across devices, and synchronizes data when connectivity is restored.
+Edulite is an educational platform designed to provide seamless learning experiences both online and offline. The system allows teachers to create courses with downloadable resources, enables students to access these courses offline, tracks progress across devices, and synchronizes data when connectivity is restored.
 
 ## Features
 
@@ -333,7 +333,7 @@ async function syncOfflineData() {
 
 ```bash
 # Clone the repository
-$ git clone https://github.com/Vix1209/talenvo-hackathon.git
+$ git clone https://github.com/Vix1209/Edulite-hackathon.git
 
 # Install dependencies
 $ npm install
