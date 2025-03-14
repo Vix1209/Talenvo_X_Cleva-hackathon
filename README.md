@@ -333,7 +333,7 @@ async function syncOfflineData() {
 
 ```bash
 # Clone the repository
-$ git clone https://github.com/your-username/talenvo.git
+$ git clone https://github.com/Vix1209/talenvo-hackathon.git
 
 # Install dependencies
 $ npm install
@@ -346,14 +346,14 @@ $ cp .env.example .env
 $ npm run migration:run
 
 # Start the development server
-$ npm run start:dev
+$ npm run start
 ```
 
 ## Development
 
 ```bash
 # Run in development mode with hot-reload
-$ npm run start:dev
+$ npm run dev
 
 # Lint the code
 $ npm run lint
@@ -387,4 +387,4 @@ $ npm run start:prod
 
 ---
 
-Built with ❤️ using [NestJS](https://nestjs.com/)
+Built with ❤️ by [Uchenna Ofor](https://github.com/Vix1209) using [NestJS](https://nestjs.com/), a Node.js Framework
