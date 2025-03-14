@@ -1,11 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
+import { ResourceType } from 'utils/types';
 
 export class CreateDownloadableResourceDto {
   @ApiProperty({ description: 'Name of the resource' })
@@ -21,7 +23,8 @@ export class CreateDownloadableResourceDto {
   @ApiProperty({ description: 'Type of the resource (pdf, video, etc.)' })
   @IsString()
   @IsNotEmpty()
-  type: string;
+  @IsEnum(ResourceType)
+  type: ResourceType;
 
   @ApiProperty({
     description: 'Size of the resource in bytes',

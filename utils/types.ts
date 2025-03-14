@@ -7,3 +7,12 @@ export enum ResourceType {
   LINK = 'LINK',
   TEXT = 'TEXT',
 }
+
+export interface DeviceInfo {
+  platform: string;
+  browser: string;
+  version?: string;
+  screenSize?: string;
+  model?: string;
+  os?: string;
+}

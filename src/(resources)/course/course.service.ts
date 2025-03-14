@@ -16,12 +16,12 @@ import {
   UpdateDownloadableResourceDto,
 } from './dto/downloadable-resource.dto';
 import {
+  DeviceInfoDto,
   DownloadCourseDto,
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
 import { WebsocketService } from 'src/websockets/websockets.service';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CourseService {
@@ -221,7 +221,7 @@ export class CourseService {
       if (isCompleted !== undefined) {
         progress.isCompleted = isCompleted;
       }
-      if (lastPosition) {
+      if (lastPosition !== undefined) {
         progress.lastPosition = lastPosition;
       }
     }
@@ -269,7 +269,14 @@ export class CourseService {
           {
             downloadedAt: new Date(),
             syncedAt: undefined,
-            deviceInfo,
+            deviceInfo: {
+              platform: deviceInfo.platform,
+              browser: deviceInfo.browser,
+              version: deviceInfo.version,
+              screenSize: deviceInfo.screenSize,
+              model: deviceInfo.model,
+              os: deviceInfo.os,
+            },
           },
         ],
       });
@@ -284,21 +291,35 @@ export class CourseService {
       progress.offlineAccessHistory.push({
         downloadedAt: new Date(),
         syncedAt: undefined,
-        deviceInfo,
+        deviceInfo: {
+          platform: deviceInfo.platform,
+          browser: deviceInfo.browser,
+          version: deviceInfo.version,
+          screenSize: deviceInfo.screenSize,
+          model: deviceInfo.model,
+          os: deviceInfo.os,
+        },
       });
     }
 
     // Increment download count for the course
-    course.downloadCount += 1;
+    course.downloadCount = (course.downloadCount || 0) + 1;
     await this.courseRepository.save(course);
 
     const savedProgress = await this.courseProgressRepository.save(progress);
 
-    // Notify connected clients about the download
+    // Notify connected clients about the download via WebSockets
     this.websocketService.emit('course-downloaded', {
       userId,
       courseId,
-      deviceInfo,
+      deviceInfo: {
+        platform: deviceInfo.platform,
+        browser: deviceInfo.browser,
+        version: deviceInfo.version,
+        screenSize: deviceInfo.screenSize,
+        model: deviceInfo.model,
+        os: deviceInfo.os,
+      },
       timestamp: new Date(),
     });
 
@@ -315,7 +336,6 @@ export class CourseService {
       isCompleted,
       lastPosition,
       deviceInfo,
-      lastModifiedOffline,
     } = syncDto;
 
     // Check if course exists
@@ -337,7 +357,7 @@ export class CourseService {
     if (isCompleted !== undefined) {
       progress.isCompleted = isCompleted;
     }
-    if (lastPosition) {
+    if (lastPosition !== undefined) {
       progress.lastPosition = lastPosition;
     }
 
@@ -348,6 +368,14 @@ export class CourseService {
     ) {
       const lastIndex = progress.offlineAccessHistory.length - 1;
       progress.offlineAccessHistory[lastIndex].syncedAt = new Date();
+      progress.offlineAccessHistory[lastIndex].deviceInfo = {
+        platform: deviceInfo.platform,
+        browser: deviceInfo.browser,
+        version: deviceInfo.version,
+        screenSize: deviceInfo.screenSize,
+        model: deviceInfo.model,
+        os: deviceInfo.os,
+      };
     }
 
     // Update course last synced timestamp
@@ -363,6 +391,14 @@ export class CourseService {
       progressPercentage,
       isCompleted: progress.isCompleted,
       syncedAt: new Date(),
+      deviceInfo: {
+        platform: deviceInfo.platform,
+        browser: deviceInfo.browser,
+        version: deviceInfo.version,
+        screenSize: deviceInfo.screenSize,
+        model: deviceInfo.model,
+        os: deviceInfo.os,
+      },
     });
 
     return savedProgress;

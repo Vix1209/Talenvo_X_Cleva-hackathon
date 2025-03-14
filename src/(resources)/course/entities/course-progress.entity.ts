@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { DeviceInfo } from 'utils/types';
 
 @Entity({ name: 'course_progress' })
 export class CourseProgress {
@@ -18,14 +19,12 @@ export class CourseProgress {
   @ManyToOne(() => User)
   @JoinColumn()
   user: User;
-
   @Column()
   userId: string;
 
   @ManyToOne(() => Course)
   @JoinColumn()
   course: Course;
-
   @Column()
   courseId: string;
 
@@ -42,15 +41,11 @@ export class CourseProgress {
   offlineAccessHistory: {
     downloadedAt: Date;
     syncedAt?: Date;
-    deviceInfo: string;
+    deviceInfo: DeviceInfo;
   }[];
 
-  @Column({ type: 'json', nullable: true })
-  lastPosition: {
-    section: string;
-    timestamp: number;
-    completedResources: string[];
-  };
+  @Column({ type: 'float', nullable: true })
+  lastPosition?: number;
 
   @CreateDateColumn()
   createdAt: Date;
