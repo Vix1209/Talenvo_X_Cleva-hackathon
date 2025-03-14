@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
-import { RoleService } from './(resources)/role/role.service'; // Adjust the import path as necessary
+import { RoleService } from './(resources)/role/role.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

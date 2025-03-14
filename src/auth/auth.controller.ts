@@ -16,7 +16,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './guard/jwt.guard';
-import { GetUser } from './customDecorators/getUser';
+import { GetUser } from './customDecorators/getUser.decorator';
 import {
   ApiBearerAuth,
   ApiConsumes,

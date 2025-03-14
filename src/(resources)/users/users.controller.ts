@@ -12,7 +12,7 @@ import {
 import { UsersService } from './users.service';
 import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/guard/role.guard';
-import { Roles } from 'src/auth/customDecorators/roleHandling';
+import { Roles } from 'src/auth/customDecorators/roles.decorator';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {

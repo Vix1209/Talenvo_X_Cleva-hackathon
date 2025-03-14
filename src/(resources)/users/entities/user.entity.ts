@@ -17,8 +17,8 @@ import {
   StudentProfile,
   AdminProfile,
 } from './user-profile.entity';
-import { Comment } from 'src/(resources)/comment/entities/comment.entity';
-import { AdditionalResource } from 'src/(resources)/additional_resource/entities/additional_resource.entity';
+import { Comment } from 'src/(resources)/course/entities/comment.entity';
+import { AdditionalResource } from 'src/(resources)/course/entities/additional_resource.entity';
 import { Course } from 'src/(resources)/course/entities/course.entity';
 
 @Entity({ name: 'users' })

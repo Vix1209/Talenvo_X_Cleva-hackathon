@@ -19,6 +19,7 @@ import {
   TeacherProfile,
 } from 'src/(resources)/users/entities/user-profile.entity';
 import { MailModule } from 'src/mail/mail.module';
+import { RolesGuard } from './guard/role.guard';
 
 @Module({
   imports: [
@@ -47,8 +48,9 @@ import { MailModule } from 'src/mail/mail.module';
     UsersService,
     JwtStrategy,
     CloudinaryUploadService,
+    RolesGuard,
     // GoogleStrategy
   ],
-  exports: [AuthService],
+  exports: [AuthService, RolesGuard],
 })
 export class AuthModule {}

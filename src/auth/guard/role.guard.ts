@@ -5,25 +5,42 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Role } from 'src/(resources)/role/entities/role.entity';
 import { User } from 'src/(resources)/users/entities/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
 
-  canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.get<string[]>(
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const requiredRoleNames = this.reflector.get<string[]>(
       'roles',
       context.getHandler(),
     );
-    if (!requiredRoles) {
-      return true; // If no roles are defined, allow access
+
+    if (!requiredRoleNames) {
+      return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const data: User = request.user;
+    const { user } = context.switchToHttp().getRequest();
 
-    if (!data || !requiredRoles.includes(data.role.name)) {
+    // Get the user's role from the database
+    const userRole = await this.roleRepository.findOne({
+      where: { id: user.role.name },
+    });
+
+    if (!userRole) {
+      return false;
+    }
+
+    if (!requiredRoleNames.includes(userRole.name)) {
       throw new ForbiddenException(`Access denied! Unauthorized entry!`);
     }
 

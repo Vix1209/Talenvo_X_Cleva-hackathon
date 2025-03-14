@@ -1,7 +1,8 @@
-import { AdditionalResource } from 'src/(resources)/additional_resource/entities/additional_resource.entity';
-import { Comment } from 'src/(resources)/comment/entities/comment.entity';
-import { Quiz } from 'src/(resources)/quiz/entities/quiz.entity';
+import { AdditionalResource } from 'src/(resources)/course/entities/additional_resource.entity';
+import { Comment } from 'src/(resources)/course/entities/comment.entity';
+import { Quiz } from 'src/(resources)/course/entities/quiz.entity';
 import { User } from 'src/(resources)/users/entities/user.entity';
+import { DownloadableResource } from './downloadable-resource.entity';
 import {
   Column,
   CreateDateColumn,
@@ -30,6 +31,15 @@ export class Course {
   @Column({ type: 'json' })
   topics: string[];
 
+  @Column({ default: false })
+  isOfflineAccessible: boolean;
+
+  @Column({ default: 0 })
+  downloadCount: number;
+
+  @Column({ nullable: true })
+  lastSyncedAt: Date;
+
   @OneToMany(() => Comment, (comment) => comment.course)
   comments: Comment[];
 
@@ -40,6 +50,11 @@ export class Course {
     cascade: true,
   })
   additionalResources?: AdditionalResource[];
+
+  @OneToMany(() => DownloadableResource, (resource) => resource.course, {
+    cascade: true,
+  })
+  downloadableResources: DownloadableResource[];
 
   @ManyToOne(() => User, (user) => user.courses)
   @JoinColumn()

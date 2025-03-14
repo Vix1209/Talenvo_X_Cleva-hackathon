@@ -9,9 +9,9 @@ import {
   StudentProfile,
   TeacherProfile,
 } from './entities/user-profile.entity';
-import { Comment } from '../comment/entities/comment.entity';
-import { AdditionalResource } from '../additional_resource/entities/additional_resource.entity';
-import { Quiz } from '../quiz/entities/quiz.entity';
+import { Comment } from '../course/entities/comment.entity';
+import { AdditionalResource } from '../course/entities/additional_resource.entity';
+import { Quiz } from '../course/entities/quiz.entity';
 
 @Module({
   imports: [
