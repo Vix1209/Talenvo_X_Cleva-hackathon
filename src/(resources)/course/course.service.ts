@@ -22,6 +22,9 @@ import {
   UpdateProgressDto,
 } from './dto/course-progress.dto';
 import { WebsocketService } from 'src/websockets/websockets.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from 'utils/types';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class CourseService {
@@ -30,16 +33,18 @@ export class CourseService {
     private courseRepository: Repository<Course>,
     @InjectRepository(CourseProgress)
     private courseProgressRepository: Repository<CourseProgress>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     @InjectRepository(DownloadableResource)
     private downloadableResourceRepository: Repository<DownloadableResource>,
     private websocketService: WebsocketService,
+    private notificationService: NotificationService,
   ) {}
 
   async create(createCourseDto: CreateCourseDto): Promise<Course> {
     try {
       const course = this.courseRepository.create({
         ...createCourseDto,
-        isOfflineAccessible: createCourseDto.isOfflineAccessible || false,
       });
 
       return await this.courseRepository.save(course);
@@ -201,7 +206,7 @@ export class CourseService {
       updateProgressDto;
 
     // Check if course exists
-    await this.findOne(courseId);
+    const course = await this.findOne(courseId);
 
     // Find existing progress or create new
     let progress = await this.courseProgressRepository.findOne({
@@ -228,6 +233,66 @@ export class CourseService {
 
     const savedProgress = await this.courseProgressRepository.save(progress);
 
+    // Send notification for course completion
+    if (isCompleted && !progress.isCompleted) {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+      if (!userId) {
+        throw new ConflictException(
+          'User ID is required to send notifications',
+        );
+      }
+      await this.notificationService.create({
+        recipientId: userId,
+        type: NotificationType.SMS,
+        title: 'Course Completed! 🎉',
+        content: `Congratulations ${user.firstName}! You've completed the course "${course.title}". Keep up the great work!`,
+        phoneNumber: user.phoneNumber,
+        metadata: {
+          courseId: course.id,
+          courseName: course.title,
+          completedAt: new Date(),
+        },
+      });
+    }
+    // Send notification for significant progress (e.g., 50%, 75%)
+    else if (
+      (progress.progressPercentage < 50 && progressPercentage >= 50) ||
+      (progress.progressPercentage < 75 && progressPercentage >= 75)
+    ) {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+      if (!user) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+      const milestone = progressPercentage >= 75 ? '75%' : '50%';
+
+      if (!userId) {
+        throw new ConflictException(
+          'User ID is required to send notifications',
+        );
+      }
+      await this.notificationService.create({
+        recipientId: userId,
+        type: NotificationType.SMS,
+        title: `Course Progress: ${milestone}! 🎯`,
+        content: `Great progress, ${user.firstName}! You're ${milestone} through "${course.title}". Keep going!`,
+        phoneNumber: user.phoneNumber,
+        metadata: {
+          courseId: course.id,
+          courseName: course.title,
+          milestone,
+          progressPercentage,
+        },
+      });
+    }
+
     // Notify connected clients about the progress update
     this.websocketService.emit('progress-updated', {
       userId,
@@ -246,6 +311,11 @@ export class CourseService {
 
     // Check if course exists and is available for offline access
     const course = await this.findOne(courseId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
 
     if (!course.isOfflineAccessible) {
       throw new BadRequestException(
@@ -307,20 +377,22 @@ export class CourseService {
     await this.courseRepository.save(course);
 
     const savedProgress = await this.courseProgressRepository.save(progress);
-
-    // Notify connected clients about the download via WebSockets
-    this.websocketService.emit('course-downloaded', {
-      userId,
-      courseId,
-      deviceInfo: {
-        platform: deviceInfo.platform,
-        browser: deviceInfo.browser,
-        version: deviceInfo.version,
-        screenSize: deviceInfo.screenSize,
-        model: deviceInfo.model,
-        os: deviceInfo.os,
+    if (!userId) {
+      throw new ConflictException('User ID is required to send notifications');
+    }
+    // Send notification for course download
+    await this.notificationService.create({
+      recipientId: userId,
+      type: NotificationType.SMS,
+      title: 'Course Downloaded Successfully',
+      content: `Hi ${user.firstName}, "${course.title}" has been downloaded for offline access. You can now learn even without an internet connection!`,
+      phoneNumber: user.phoneNumber,
+      metadata: {
+        courseId: course.id,
+        courseName: course.title,
+        deviceInfo,
+        downloadedAt: new Date(),
       },
-      timestamp: new Date(),
     });
 
     return { course, progress: savedProgress };
@@ -383,6 +455,30 @@ export class CourseService {
     await this.courseRepository.save(course);
 
     const savedProgress = await this.courseProgressRepository.save(progress);
+
+    // Send notification for successful sync
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    if (!userId) {
+      throw new ConflictException('User ID is required to send notifications');
+    }
+    await this.notificationService.create({
+      recipientId: userId,
+      type: NotificationType.SMS,
+      title: 'Course Progress Synced',
+      content: `Hi ${user.firstName}, your progress for "${course.title}" has been successfully synced. You're at ${progressPercentage}% completion.`,
+      phoneNumber: user.phoneNumber,
+      metadata: {
+        courseId: course.id,
+        courseName: course.title,
+        progressPercentage,
+        deviceInfo,
+        syncedAt: new Date(),
+      },
+    });
 
     // Notify connected clients about the sync
     this.websocketService.emit('progress-synced', {

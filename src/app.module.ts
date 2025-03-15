@@ -4,7 +4,7 @@ import { ErrorInterceptor } from './interceptors/error.interceptor';
 import { ErrorFilter } from './filters/error.filters';
 import { UsersModule } from './(resources)/users/users.module';
 import { RoleModule } from './(resources)/role/role.module';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './(resources)/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { CourseModule } from './(resources)/course/course.module';
 

@@ -11,6 +11,7 @@ import { CourseProgress } from './entities/course-progress.entity';
 import { DownloadableResource } from './entities/downloadable-resource.entity';
 import { WebsocketsModule } from 'src/websockets/websockets.module';
 import { Role } from '../role/entities/role.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { Role } from '../role/entities/role.entity';
       Role,
     ]),
     WebsocketsModule,
+    NotificationModule,
   ],
   controllers: [CourseController],
   providers: [CourseService],

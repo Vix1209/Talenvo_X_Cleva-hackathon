@@ -13,7 +13,7 @@ import { User } from './user.entity';
 @Entity({ name: 'student_profile' })
 export class StudentProfile {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  studentId: string;
 
   @OneToOne(() => User, (contestant) => contestant.studentProfile)
   @JoinColumn()
@@ -54,7 +54,7 @@ export class StudentProfile {
 @Entity({ name: 'teacher_profile' })
 export class TeacherProfile {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  teacherId: string;
 
   @OneToOne(() => User, (contestant) => contestant.teacherProfile)
   @JoinColumn()
@@ -98,7 +98,7 @@ export class TeacherProfile {
 @Entity({ name: 'admin_profile' })
 export class AdminProfile {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  adminId: string;
 
   @OneToOne(() => User, (contestant) => contestant.adminProfile)
   @JoinColumn()

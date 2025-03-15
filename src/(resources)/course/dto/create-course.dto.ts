@@ -34,16 +34,7 @@ export class CreateCourseDto {
   @IsNotEmpty()
   duration: string;
 
-  @ApiProperty({ description: 'User ID of the course creator' })
   @IsUUID()
   @IsOptional()
   userId?: string;
-
-  @ApiProperty({
-    description: 'Whether the course is available for offline access',
-    example: 'true',
-  })
-  @IsBoolean()
-  @IsOptional()
-  isOfflineAccessible?: boolean;
 }

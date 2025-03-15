@@ -16,7 +16,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './guard/jwt.guard';
-import { GetUser } from './customDecorators/getUser.decorator';
+import { GetUser } from './decorators/getUser.decorator';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -27,10 +27,10 @@ import {
   CreateAdminDto,
   CreateStudentDto,
   CreateTeacherDto,
-} from 'src/auth/dto/create-account.dto';
+} from '../auth/dto/create-account.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { GlobalApiResponse } from '../../utils/decorator/api-response.decorator';
+import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { VerifyEmailDto } from './dto/verifyEmail.dto';
 import { ResetTokenDto } from './dto/reset-token.dto';

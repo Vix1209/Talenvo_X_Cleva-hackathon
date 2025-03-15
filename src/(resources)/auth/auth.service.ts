@@ -31,6 +31,8 @@ import {
 } from 'src/(resources)/users/entities/user-profile.entity';
 import { CreateAdminDto } from './dto/create-account.dto';
 import { ResetTokenDto } from './dto/reset-token.dto';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from 'utils/types';
 
 @Injectable()
 export class AuthService {
@@ -53,14 +55,134 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private cloudinaryUploadService: CloudinaryUploadService,
+    private notificationService: NotificationService,
   ) {}
 
+  private async generateStudentId(): Promise<string> {
+    const year = new Date().getFullYear().toString().slice(-2);
+    const count = (await this.studentProfileRepository.count()) + 1;
+    return `STU${year}${count.toString().padStart(4, '0')}`;
+  }
+
+  private async generateTeacherId(): Promise<string> {
+    const year = new Date().getFullYear().toString().slice(-2);
+    const count = (await this.teacherProfileRepository.count()) + 1;
+    return `TCH${year}${count.toString().padStart(4, '0')}`;
+  }
+
+  private async generateAdminId(): Promise<string> {
+    const year = new Date().getFullYear().toString().slice(-2);
+    const count = (await this.adminProfileRepository.count()) + 1;
+    return `ADM${year}${count.toString().padStart(4, '0')}`;
+  }
+
   async create_student(createStudentDto: CreateStudentDto) {
-    return {};
+    if (!createStudentDto.password) {
+      throw new BadRequestException('Password is required');
+    }
+
+    const hashedPassword = await hash(createStudentDto.password, 10);
+
+    const { existingRole, token } = await this.validateAndPrepareUser(
+      createStudentDto as CreateUserDto,
+      'student',
+    );
+
+    // Create user
+    const account = this.userRepository.create({
+      ...createStudentDto,
+      password: hashedPassword,
+      verificationToken: token,
+      role: existingRole,
+    });
+
+    const newAccount = await this.userRepository.save(account);
+
+    // Create student profile
+    const studentProfile = this.studentProfileRepository.create({
+      user: newAccount,
+      studentId: await this.generateStudentId(),
+      phoneNumber: createStudentDto.phoneNumber,
+      profilePicture: createStudentDto.profilePicture,
+      gradeLevel: createStudentDto.gradeLevel,
+      preferredSubjects: createStudentDto.preferredSubjects,
+      learningGoals: createStudentDto.learningGoals,
+      totalLessonsCompleted: '0',
+      averageQuizScore: '0',
+      badgesEarned: '',
+    });
+
+    await this.studentProfileRepository.save(studentProfile);
+
+    // Send verification email
+    await this.mailService.sendUserConfirmation(newAccount, token);
+
+    // Send welcome notification
+    await this.notificationService.create({
+      recipientId: newAccount.id,
+      type: NotificationType.SMS,
+      title: 'Welcome to Talenvo!',
+      content: `Welcome ${newAccount.firstName}! Your student account has been created successfully. Your student ID is ${studentProfile.studentId}. Please verify your email to get started.`,
+      phoneNumber: newAccount.phoneNumber,
+    });
+
+    const { password, verificationToken, ...result } = newAccount;
+    return result;
   }
 
   async create_Teacher(createTeacherDto: CreateTeacherDto) {
-    return {};
+    if (!createTeacherDto.password) {
+      throw new BadRequestException('Password is required');
+    }
+
+    const hashedPassword = await hash(createTeacherDto.password, 10);
+
+    const { existingRole, token } = await this.validateAndPrepareUser(
+      createTeacherDto as CreateUserDto,
+      'teacher',
+    );
+
+    // Create user
+    const account = this.userRepository.create({
+      ...createTeacherDto,
+      password: hashedPassword,
+      verificationToken: token,
+      role: existingRole,
+    });
+
+    const newAccount = await this.userRepository.save(account);
+
+    // Create teacher profile
+    const teacherProfile = this.teacherProfileRepository.create({
+      user: newAccount,
+      teacherId: await this.generateTeacherId(),
+      phoneNumber: createTeacherDto.phoneNumber,
+      profilePicture: createTeacherDto.profilePicture,
+      bio: createTeacherDto.bio,
+      subjectsTaught: createTeacherDto.subjectsTaught,
+      educationLevel: createTeacherDto.educationLevel,
+      teachingExperience: createTeacherDto.teachingExperience,
+      certifications: createTeacherDto.certifications,
+      rating: '0',
+      totalCourses: 0,
+    });
+
+    await this.teacherProfileRepository.save(teacherProfile);
+
+    // Send verification email
+    await this.mailService.sendUserConfirmation(newAccount, token);
+
+    // Send welcome notification
+    await this.notificationService.create({
+      recipientId: newAccount.id,
+      type: NotificationType.SMS,
+      title: 'Welcome to Talenvo!',
+      content: `Welcome ${newAccount.firstName}! Your teacher account has been created successfully. Your teacher ID is ${teacherProfile.teacherId}. Please verify your email to start creating courses.`,
+      phoneNumber: newAccount.phoneNumber,
+    });
+
+    const { password, verificationToken, ...result } = newAccount;
+    return result;
   }
 
   async create_Admin(createAdminDto: CreateAdminDto) {
@@ -68,18 +190,12 @@ export class AuthService {
       throw new BadRequestException('Password is required');
     }
 
-    // Hash password
-    if (!createAdminDto.password) {
-      throw new BadRequestException('Password is required');
-    }
     const hashedPassword = await hash(createAdminDto.password, 10);
 
     const { existingRole, token } = await this.validateAndPrepareUser(
       createAdminDto as CreateUserDto,
       'admin',
     );
-
-    createAdminDto.verificationToken = token;
 
     // Create user
     const account = this.userRepository.create({
@@ -94,37 +210,28 @@ export class AuthService {
     // Create admin profile
     const adminProfile = this.adminProfileRepository.create({
       user: newAccount,
+      adminId: await this.generateAdminId(),
       phoneNumber: createAdminDto.phoneNumber,
       profilePicture: createAdminDto.profilePicture,
+      lastLogin: new Date().toISOString(),
     });
 
-    const savedProfile = await this.adminProfileRepository.save(adminProfile);
+    await this.adminProfileRepository.save(adminProfile);
 
-    // Update user with profile reference
-    newAccount.adminProfile = savedProfile;
-    await this.userRepository.save(newAccount);
+    // Send verification email
+    await this.mailService.sendUserConfirmation(newAccount, token);
 
-    // Send confirmation email
-    // await this.mailService.sendAuthEmailConfirmation(
-    //   createAdminDto,
-    //   true,
-    //   token,
-    // );
-
-    return {
-      id: newAccount.id,
-      firstName: newAccount.firstName,
-      lastName: newAccount.lastName,
-      email: newAccount.email,
+    // Send welcome notification
+    await this.notificationService.create({
+      recipientId: newAccount.id,
+      type: NotificationType.SMS,
+      title: 'Welcome to Talenvo!',
+      content: `Welcome ${newAccount.firstName}! Your admin account has been created successfully. Your admin ID is ${adminProfile.adminId}. Please verify your email to access the admin dashboard.`,
       phoneNumber: newAccount.phoneNumber,
-      role: {
-        id: newAccount.role.id,
-        name: newAccount.role.name,
-      },
-      status: newAccount.status,
-      profileType: 'admin',
-      profile: savedProfile,
-    };
+    });
+
+    const { password, verificationToken, ...result } = newAccount;
+    return result;
   }
 
   async login(dto: LoginDto) {
@@ -263,13 +370,13 @@ export class AuthService {
         status: true,
         isVerified: true,
         studentProfile: {
-          id: true,
+          studentId: true,
         },
         teacherProfile: {
-          id: true,
+          teacherId: true,
         },
         adminProfile: {
-          id: true,
+          adminId: true,
         },
       },
       relations: {

@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -16,20 +17,16 @@ import {
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
-import {
-  ApiOperation,
-  ApiTags,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import {
   CreateDownloadableResourceDto,
   UpdateDownloadableResourceDto,
 } from './dto/downloadable-resource.dto';
-import { JwtGuard } from 'src/auth/guard/jwt.guard';
-import { RolesGuard } from 'src/auth/guard/role.guard';
-import { Roles } from 'src/auth/customDecorators/roles.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
+import { RolesGuard } from '../auth/guard/role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Courses')
 @Controller({ path: 'courses', version: '1' })
@@ -41,7 +38,9 @@ export class CourseController {
   @Post()
   @Roles('teacher')
   @ApiOperation({ summary: 'Create a new course' })
-  async create(@Body() createCourseDto: CreateCourseDto) {
+  async create(@Body() createCourseDto: CreateCourseDto, @Req() request) {
+    const user = request.user.id;
+    createCourseDto.userId = user;
     return await this.courseService.create(createCourseDto);
   }
 

@@ -16,3 +16,16 @@ export interface DeviceInfo {
   model?: string;
   os?: string;
 }
+
+export enum NotificationType {
+  SMS = 'SMS',
+  EMAIL = 'EMAIL',
+  SYSTEM = 'SYSTEM',
+}
+
+export enum NotificationStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  FAILED = 'FAILED',
+  READ = 'READ',
+}

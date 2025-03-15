@@ -50,8 +50,8 @@ export class DeviceInfoDto {
 export class UpdateProgressDto {
   @ApiProperty({ description: 'User ID' })
   @IsUUID()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 
   @ApiProperty({ description: 'Course ID' })
   @IsUUID()
@@ -78,8 +78,8 @@ export class UpdateProgressDto {
 export class DownloadCourseDto {
   @ApiProperty({ description: 'User ID' })
   @IsUUID()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 
   @ApiProperty({ description: 'Course ID' })
   @IsUUID()

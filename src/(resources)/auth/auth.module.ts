@@ -20,6 +20,7 @@ import {
 } from 'src/(resources)/users/entities/user-profile.entity';
 import { MailModule } from 'src/mail/mail.module';
 import { RolesGuard } from './guard/role.guard';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RolesGuard } from './guard/role.guard';
     MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UsersModule,
+    NotificationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

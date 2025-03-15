@@ -14,9 +14,9 @@ import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { JwtGuard } from 'src/auth/guard/jwt.guard';
-import { RolesGuard } from 'src/auth/guard/role.guard';
-import { Roles } from 'src/auth/customDecorators/roles.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
+import { RolesGuard } from '../auth/guard/role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
 
 @GlobalApiResponse()

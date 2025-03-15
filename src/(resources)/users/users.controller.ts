@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { RolesGuard } from 'src/auth/guard/role.guard';
-import { Roles } from 'src/auth/customDecorators/roles.decorator';
+import { RolesGuard } from '../auth/guard/role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
