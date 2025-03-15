@@ -7,19 +7,41 @@ export class MailService {
   constructor(private mailerService: MailerService) {}
 
   async sendUserConfirmation(user: User, token: string, isVerified: boolean) {
-    const url = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}&email=${user.email}`;
-
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Welcome to Talenvo! Confirm your Email',
-      template: './html_templates',
-      context: {
-        name: `${user.firstName} ${user.lastName}`,
-        url,
-        role: user.role.name,
-        sendUserWelcome: isVerified,
-      },
-    });
+    // const url = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}&email=${user.email}`;
+    if (user.role.name === 'admin') {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Welcome to Talenvo! Confirm your Email',
+        template: './html_templates',
+        context: {
+          name: `${user.firstName} ${user.lastName}`,
+          token: token,
+          sendUserWelcomeAdmin: isVerified,
+        },
+      });
+    } else if (user.role.name === 'student') {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Welcome to Talenvo! Confirm your Email',
+        template: './html_templates',
+        context: {
+          name: `${user.firstName} ${user.lastName}`,
+          token: token,
+          sendUserWelcomeStudent: isVerified,
+        },
+      });
+    } else if (user.role.name === 'teacher') {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Welcome to Talenvo! Confirm your Email',
+        template: './html_templates',
+        context: {
+          name: `${user.firstName} ${user.lastName}`,
+          token: token,
+          sendUserWelcomeTeacher: isVerified,
+        },
+      });
+    }
   }
 
   async sendPasswordResetEmail(email: string, resetToken: string) {
