@@ -12,14 +12,6 @@ import {
 
 // ------------------ Student Profile DTOs ------------------ //
 export class CreateStudentProfileDto {
-  @ApiProperty({
-    description: 'Student phone number',
-    example: '+1234567890',
-  })
-  @IsNotEmpty()
-  @IsString()
-  phoneNumber: string;
-
   @ApiPropertyOptional({
     description: 'Profile picture URL',
     example: 'https://example.com/images/profile.jpg',
@@ -78,14 +70,6 @@ export class CreateStudentProfileDto {
 }
 
 export class UpdateStudentProfileDto {
-  @ApiPropertyOptional({
-    description: 'Student phone number',
-    example: '+1234567890',
-  })
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
   @ApiPropertyOptional({
     description: 'Profile picture URL',
     example: 'https://example.com/images/profile.jpg',
@@ -147,9 +131,6 @@ export class StudentProfileResponseDto {
   @IsUUID()
   id: string;
 
-  @IsString()
-  phoneNumber: string;
-
   @IsOptional()
   @IsString()
   profilePicture?: string;
@@ -184,14 +165,6 @@ export class StudentProfileResponseDto {
 
 // ------------------ Teacher Profile DTOs ------------------ //
 export class CreateTeacherProfileDto {
-  @ApiProperty({
-    description: 'Teacher phone number',
-    example: '+1234567890',
-  })
-  @IsNotEmpty()
-  @IsString()
-  phoneNumber: string;
-
   @ApiPropertyOptional({
     description: 'Profile picture URL',
     example: 'https://example.com/images/teacher.jpg',
@@ -258,14 +231,6 @@ export class CreateTeacherProfileDto {
 }
 
 export class UpdateTeacherProfileDto {
-  @ApiPropertyOptional({
-    description: 'Teacher phone number',
-    example: '+1234567890',
-  })
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
   @ApiPropertyOptional({
     description: 'Profile picture URL',
     example: 'https://example.com/images/teacher.jpg',
@@ -335,9 +300,6 @@ export class TeacherProfileResponseDto {
   @IsUUID()
   id: string;
 
-  @IsString()
-  phoneNumber: string;
-
   @IsOptional()
   @IsString()
   profilePicture?: string;
@@ -376,14 +338,6 @@ export class TeacherProfileResponseDto {
 
 // ------------------ Admin Profile DTOs ------------------ //
 export class CreateAdminProfileDto {
-  @ApiProperty({
-    description: 'Admin phone number',
-    example: '+1234567890',
-  })
-  @IsNotEmpty()
-  @IsString()
-  phoneNumber: string;
-
   @ApiPropertyOptional({
     description: 'Profile picture URL',
     example: 'https://example.com/images/admin.jpg',
@@ -402,14 +356,6 @@ export class CreateAdminProfileDto {
 }
 
 export class UpdateAdminProfileDto {
-  @ApiPropertyOptional({
-    description: 'Admin phone number',
-    example: '+1234567890',
-  })
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
   @ApiPropertyOptional({
     description: 'Profile picture URL',
     example: 'https://example.com/images/admin.jpg',
@@ -430,9 +376,6 @@ export class UpdateAdminProfileDto {
 export class AdminProfileResponseDto {
   @IsUUID()
   id: string;
-
-  @IsString()
-  phoneNumber: string;
 
   @IsOptional()
   @IsString()

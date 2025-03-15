@@ -7,6 +7,7 @@ import {
   CreateStudentProfileDto,
   CreateTeacherProfileDto,
 } from 'src/(resources)/users/dto/update-user.dto';
+import { Unique } from 'typeorm';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -29,12 +30,14 @@ export class CreateUserDto {
     example: '',
   })
   @IsEmail()
+  @Unique(['email'])
   email: string;
 
   @ApiProperty({
     description: 'The User phone number',
     example: '',
   })
+  @Unique(['phoneNumber'])
   @IsString()
   phoneNumber: string;
 
@@ -49,14 +52,6 @@ export class CreateUserDto {
 
   @Optional()
   verificationToken?: string;
-
-  @ApiProperty({
-    description: 'The Account Role',
-    example: {
-      name: '',
-    },
-  })
-  role: Role;
 }
 
 export class CreateAdminDto extends IntersectionType(

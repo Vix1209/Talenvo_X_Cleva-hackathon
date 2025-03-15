@@ -83,10 +83,12 @@ export class AuthService {
 
     const hashedPassword = await hash(createStudentDto.password, 10);
 
-    const { existingRole, token } = await this.validateAndPrepareUser(
-      createStudentDto as CreateUserDto,
-      'student',
-    );
+    const { existingRole, token, phoneNumber } =
+      await this.validateAndPrepareUser(
+        createStudentDto as CreateUserDto,
+        'student',
+        createStudentDto.phoneNumber,
+      );
 
     // Create user
     const account = this.userRepository.create({
@@ -94,6 +96,7 @@ export class AuthService {
       password: hashedPassword,
       verificationToken: token,
       role: existingRole,
+      phoneNumber,
     });
 
     const newAccount = await this.userRepository.save(account);
@@ -102,7 +105,6 @@ export class AuthService {
     const studentProfile = this.studentProfileRepository.create({
       user: newAccount,
       studentId: await this.generateStudentId(),
-      phoneNumber: createStudentDto.phoneNumber,
       profilePicture: createStudentDto.profilePicture,
       gradeLevel: createStudentDto.gradeLevel,
       preferredSubjects: createStudentDto.preferredSubjects,
@@ -115,7 +117,7 @@ export class AuthService {
     await this.studentProfileRepository.save(studentProfile);
 
     // Send verification email
-    await this.mailService.sendUserConfirmation(newAccount, token);
+    await this.mailService.sendUserConfirmation(newAccount, token, true);
 
     // Send welcome notification
     await this.notificationService.create({
@@ -137,10 +139,12 @@ export class AuthService {
 
     const hashedPassword = await hash(createTeacherDto.password, 10);
 
-    const { existingRole, token } = await this.validateAndPrepareUser(
-      createTeacherDto as CreateUserDto,
-      'teacher',
-    );
+    const { existingRole, token, phoneNumber } =
+      await this.validateAndPrepareUser(
+        createTeacherDto as CreateUserDto,
+        'teacher',
+        createTeacherDto.phoneNumber,
+      );
 
     // Create user
     const account = this.userRepository.create({
@@ -148,6 +152,7 @@ export class AuthService {
       password: hashedPassword,
       verificationToken: token,
       role: existingRole,
+      phoneNumber,
     });
 
     const newAccount = await this.userRepository.save(account);
@@ -156,7 +161,6 @@ export class AuthService {
     const teacherProfile = this.teacherProfileRepository.create({
       user: newAccount,
       teacherId: await this.generateTeacherId(),
-      phoneNumber: createTeacherDto.phoneNumber,
       profilePicture: createTeacherDto.profilePicture,
       bio: createTeacherDto.bio,
       subjectsTaught: createTeacherDto.subjectsTaught,
@@ -170,7 +174,7 @@ export class AuthService {
     await this.teacherProfileRepository.save(teacherProfile);
 
     // Send verification email
-    await this.mailService.sendUserConfirmation(newAccount, token);
+    await this.mailService.sendUserConfirmation(newAccount, token, true);
 
     // Send welcome notification
     await this.notificationService.create({
@@ -192,10 +196,12 @@ export class AuthService {
 
     const hashedPassword = await hash(createAdminDto.password, 10);
 
-    const { existingRole, token } = await this.validateAndPrepareUser(
-      createAdminDto as CreateUserDto,
-      'admin',
-    );
+    const { existingRole, token, phoneNumber } =
+      await this.validateAndPrepareUser(
+        createAdminDto as CreateUserDto,
+        'admin',
+        createAdminDto.phoneNumber,
+      );
 
     // Create user
     const account = this.userRepository.create({
@@ -203,6 +209,7 @@ export class AuthService {
       password: hashedPassword,
       verificationToken: token,
       role: existingRole,
+      phoneNumber,
     });
 
     const newAccount = await this.userRepository.save(account);
@@ -211,7 +218,6 @@ export class AuthService {
     const adminProfile = this.adminProfileRepository.create({
       user: newAccount,
       adminId: await this.generateAdminId(),
-      phoneNumber: createAdminDto.phoneNumber,
       profilePicture: createAdminDto.profilePicture,
       lastLogin: new Date().toISOString(),
     });
@@ -219,7 +225,7 @@ export class AuthService {
     await this.adminProfileRepository.save(adminProfile);
 
     // Send verification email
-    await this.mailService.sendUserConfirmation(newAccount, token);
+    await this.mailService.sendUserConfirmation(newAccount, token, true);
 
     // Send welcome notification
     await this.notificationService.create({
@@ -265,8 +271,7 @@ export class AuthService {
 
     await this.userRepository.save(account);
 
-    // const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
-    // await this.mailService.sendPasswordResetEmail(account.email, resetToken);
+    await this.mailService.sendPasswordResetEmail(account.email, resetToken);
     return { message: 'Reset link sent to verified email' };
   }
 
@@ -312,13 +317,13 @@ export class AuthService {
       user.isVerified = true;
       user.verificationToken = null;
       savedUser = await this.userRepository.save(user);
-      // if (savedUser) {
-      //   await this.mailService.sendPasswordAfterVerifyingEmail(
-      //     email,
-      //     user,
-      //     true,
-      //   );
-      // }
+      if (savedUser) {
+        await this.mailService.sendPasswordAfterVerifyingEmail(
+          email,
+          user,
+          true,
+        );
+      }
     }
     return savedUser;
   }
@@ -342,13 +347,13 @@ export class AuthService {
       user.resetTokenExpiry = null;
       user.isResetTokenVerified = true;
       savedUser = await this.userRepository.save(user);
-      // if (savedUser) {
-      //   await this.mailService.sendResetTokenConfirmation(
-      //     resetTokenDto.email,
-      //     user,
-      //     true,
-      //   );
-      // }
+      if (savedUser) {
+        await this.mailService.sendResetTokenConfirmation(
+          resetTokenDto.email,
+          user,
+          true,
+        );
+      }
     }
     return savedUser;
   }
@@ -446,7 +451,11 @@ export class AuthService {
     });
   }
 
-  async validateAndPrepareUser(createUserDto: CreateUserDto, roleName: string) {
+  async validateAndPrepareUser(
+    createUserDto: CreateUserDto,
+    roleName: string,
+    phoneNumber: string,
+  ) {
     // Validate email
     if (!validateEmail(createUserDto.email)) {
       throw new EmailValidationException();
@@ -479,12 +488,10 @@ export class AuthService {
       throw new BadRequestException(`Role does not exist`);
     }
 
-    createUserDto.role = existingRole;
-
     // Generate verification token
     const token = Math.floor(100000 + Math.random() * 900000).toString();
 
-    return { existingRole, token };
+    return { existingRole, token, phoneNumber };
   }
 }
 

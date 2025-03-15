@@ -38,7 +38,7 @@ export class User {
   @Column({ select: false })
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ unique: true })
   phoneNumber: string;
 
   @Column({ nullable: true })

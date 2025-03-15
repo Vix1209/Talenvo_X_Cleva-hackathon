@@ -19,9 +19,6 @@ export class StudentProfile {
   @JoinColumn()
   user: User;
 
-  @Column()
-  phoneNumber?: string;
-
   @Column({ nullable: true })
   profilePicture?: string;
 
@@ -59,9 +56,6 @@ export class TeacherProfile {
   @OneToOne(() => User, (contestant) => contestant.teacherProfile)
   @JoinColumn()
   user: User;
-
-  @Column()
-  phoneNumber?: string;
 
   @Column({ nullable: true })
   profilePicture?: string;
@@ -103,9 +97,6 @@ export class AdminProfile {
   @OneToOne(() => User, (contestant) => contestant.adminProfile)
   @JoinColumn()
   user: User;
-
-  @Column()
-  phoneNumber?: string;
 
   @Column({ nullable: true })
   profilePicture?: string;
