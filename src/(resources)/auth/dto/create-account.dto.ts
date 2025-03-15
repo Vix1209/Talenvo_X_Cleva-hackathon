@@ -1,7 +1,6 @@
 import { Optional } from '@nestjs/common';
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsEmail, IsString, IsOptional } from 'class-validator';
-import { Role } from 'src/(resources)/role/entities/role.entity';
 import {
   CreateAdminProfileDto,
   CreateStudentProfileDto,

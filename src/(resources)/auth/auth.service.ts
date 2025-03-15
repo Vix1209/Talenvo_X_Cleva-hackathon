@@ -457,7 +457,7 @@ export class AuthService {
     phoneNumber: string,
   ) {
     // Validate email
-    if (!validateEmail(createUserDto.email)) {
+    if (!this.validateEmail(createUserDto.email)) {
       throw new EmailValidationException();
     }
 
@@ -479,6 +479,18 @@ export class AuthService {
       }
     }
 
+    // Check if phone number is already in use
+    const existingPhoneNumber = await this.userRepository.findOne({
+      where: { phoneNumber },
+      withDeleted: true,
+    });
+
+    if (existingPhoneNumber) {
+      throw new ConflictException(
+        `Phone number ${phoneNumber} is already in use`,
+      );
+    }
+
     // Find and validate role
     const existingRole = await this.roleRepository.findOne({
       where: { name: roleName },
@@ -493,10 +505,10 @@ export class AuthService {
 
     return { existingRole, token, phoneNumber };
   }
-}
 
-function validateEmail(email: string) {
-  // Regular expression for email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  async validateEmail(email: string) {
+    // Regular expression for email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
 }

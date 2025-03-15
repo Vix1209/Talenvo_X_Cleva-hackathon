@@ -8,8 +8,6 @@ import {
   Query,
   Req,
   Res,
-  UploadedFile,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -17,12 +15,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './guard/jwt.guard';
 import { GetUser } from './decorators/getUser.decorator';
-import {
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiOperation,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import {
   CreateAdminDto,
   CreateStudentDto,

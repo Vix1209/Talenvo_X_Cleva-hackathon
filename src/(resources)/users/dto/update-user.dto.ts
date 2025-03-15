@@ -346,12 +346,7 @@ export class CreateAdminProfileDto {
   @IsString()
   profilePicture?: string;
 
-  @ApiPropertyOptional({
-    description: 'Last login timestamp',
-    example: '2025-01-15T10:30:00Z',
-  })
   @IsOptional()
-  @IsString()
   lastLogin?: string;
 }
 
@@ -364,12 +359,7 @@ export class UpdateAdminProfileDto {
   @IsString()
   profilePicture?: string;
 
-  @ApiPropertyOptional({
-    description: 'Last login timestamp',
-    example: '2025-01-15T10:30:00Z',
-  })
   @IsOptional()
-  @IsString()
   lastLogin?: string;
 }
 
@@ -382,7 +372,6 @@ export class AdminProfileResponseDto {
   profilePicture?: string;
 
   @IsOptional()
-  @IsString()
   lastLogin?: string;
 
   createdAt: Date;
