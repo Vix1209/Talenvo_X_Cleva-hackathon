@@ -76,6 +76,35 @@ export class AuthService {
     return `ADM${year}${count.toString().padStart(4, '0')}`;
   }
 
+  private formatPhoneNumber(phoneNumber: string): string {
+    // Remove any non-digit characters
+    const cleaned = phoneNumber.replace(/\D/g, '');
+
+    // If the number starts with '0', assume it's a Nigerian number and replace '0' with '+234'
+    if (cleaned.startsWith('0')) {
+      return '+234' + cleaned.substring(1);
+    }
+
+    // If the number doesn't start with '+', add it
+    if (!phoneNumber.startsWith('+')) {
+      return '+' + cleaned;
+    }
+
+    return cleaned;
+  }
+
+  private validatePhoneNumber(phoneNumber: string): boolean {
+    // Basic phone number validation
+    const phoneRegex = /^\+(?:[0-9] ?){6,14}[0-9]$/;
+    return phoneRegex.test(this.formatPhoneNumber(phoneNumber));
+  }
+
+  private validateEmail(email: string) {
+    // Regular expression for email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   async create_student(createStudentDto: CreateStudentDto) {
     if (!createStudentDto.password) {
       throw new BadRequestException('Password is required');
@@ -461,6 +490,13 @@ export class AuthService {
       throw new EmailValidationException();
     }
 
+    // Format and validate phone number
+    // if (!this.validatePhoneNumber(phoneNumber)) {
+    //   throw new BadRequestException(
+    //     'Invalid phone number format. Please use a valid international format (e.g., +2348012345678)',
+    //   );
+    // }
+
     // Check if email is already in use
     const existingEmail = await this.userRepository.findOne({
       where: { email: createUserDto.email },
@@ -481,7 +517,7 @@ export class AuthService {
 
     // Check if phone number is already in use
     const existingPhoneNumber = await this.userRepository.findOne({
-      where: { phoneNumber },
+      where: { phoneNumber: phoneNumber },
       withDeleted: true,
     });
 
@@ -503,12 +539,6 @@ export class AuthService {
     // Generate verification token
     const token = Math.floor(100000 + Math.random() * 900000).toString();
 
-    return { existingRole, token, phoneNumber };
-  }
-
-  async validateEmail(email: string) {
-    // Regular expression for email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return { existingRole, token, phoneNumber: phoneNumber };
   }
 }
