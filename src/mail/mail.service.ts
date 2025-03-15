@@ -11,7 +11,7 @@ export class MailService {
     if (user.role.name === 'admin') {
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'Welcome to Talenvo! Confirm your Email',
+        subject: 'Welcome to Edulite! Confirm your Email',
         template: './html_templates',
         context: {
           name: `${user.firstName} ${user.lastName}`,
@@ -22,7 +22,7 @@ export class MailService {
     } else if (user.role.name === 'student') {
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'Welcome to Talenvo! Confirm your Email',
+        subject: 'Welcome to Edulite! Confirm your Email',
         template: './html_templates',
         context: {
           name: `${user.firstName} ${user.lastName}`,
@@ -33,7 +33,7 @@ export class MailService {
     } else if (user.role.name === 'teacher') {
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'Welcome to Talenvo! Confirm your Email',
+        subject: 'Welcome to Edulite! Confirm your Email',
         template: './html_templates',
         context: {
           name: `${user.firstName} ${user.lastName}`,
@@ -48,7 +48,7 @@ export class MailService {
     const mailOptions = {
       to: email,
       subject: 'Password Token Sent',
-      template: './confirmation',
+      template: './html_templates',
       context: {
         resetToken: resetToken,
         email: email,
@@ -66,7 +66,7 @@ export class MailService {
     const mailOptions = {
       to: email,
       subject: 'Email Verified',
-      template: './confirmation',
+      template: './html_templates',
       context: {
         name: `${user.firstName} ${user.lastName}`,
         loginUrl: `${process.env.FRONTEND_URL}/login`,
@@ -85,7 +85,7 @@ export class MailService {
     const mailOptions = {
       to: email,
       subject: 'Password Reset',
-      template: './confirmation',
+      template: './html_templates',
       context: {
         name: `${user.firstName} ${user.lastName}`,
         loginUrl: `${process.env.FRONTEND_URL}/login`,
