@@ -1,29 +1,43 @@
-import { Course } from 'src/(resources)/course/entities/course.entity';
 import {
-  Column,
   Entity,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { Course } from './course.entity';
 
-@Entity({ name: 'quiz' })
+@Entity()
 export class Quiz {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  header: string;
+  title: string;
 
   @Column()
-  question: string;
+  description: string;
 
-  @Column({ type: 'json' })
-  options: string[];
+  @Column('json')
+  assessment: {
+    question: string;
+    options: string[];
+    correctAnswer: string;
+    explanation?: string;
+  }[];
+
+  @Column({ default: false })
+  isPublished: boolean;
 
   @ManyToOne(() => Course, (course) => course.quizzes)
-  @JoinColumn()
   course: Course;
   @Column()
   courseId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

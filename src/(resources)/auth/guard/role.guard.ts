@@ -29,19 +29,24 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
 
-    // Get the user's role from the database
-    const userRole = await this.roleRepository.findOne({
-      where: { id: user.role.name },
-    });
-
-    if (!userRole) {
-      return false;
+    if (!user || !user.role) {
+      throw new ForbiddenException('No user or role found');
     }
 
-    if (!requiredRoleNames.includes(userRole.name)) {
-      throw new ForbiddenException(`Access denied! Unauthorized entry!`);
+    // Get the user's role name directly
+    const userRoleName = user.role.name;
+
+    if (!userRoleName) {
+      throw new ForbiddenException('User role not found');
+    }
+
+    if (!requiredRoleNames.includes(userRoleName)) {
+      throw new ForbiddenException(
+        `Access denied! This route requires one of these roles: ${requiredRoleNames.join(', ')}`,
+      );
     }
 
     return true;

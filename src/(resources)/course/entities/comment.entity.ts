@@ -1,28 +1,22 @@
-import { Course } from 'src/(resources)/course/entities/course.entity';
-import { User } from 'src/(resources)/users/entities/user.entity';
 import {
-  Column,
-  CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
+import { Course } from './course.entity';
+import { User } from '../../users/entities/user.entity';
 
-@Entity({ name: 'comments' })
+@Entity()
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  comment: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
+  content: string;
 
   @ManyToOne(() => Course, (course) => course.comments)
   @JoinColumn()
@@ -30,9 +24,18 @@ export class Comment {
   @Column()
   courseId: string;
 
-  @ManyToOne(() => User, (user) => user.comments)
-  @JoinColumn()
+  @ManyToOne(() => User)
   user: User;
+
   @Column()
   userId: string;
+
+  @Column({ nullable: true })
+  parentCommentId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

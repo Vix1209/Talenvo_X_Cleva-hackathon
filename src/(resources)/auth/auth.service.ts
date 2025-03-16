@@ -76,27 +76,19 @@ export class AuthService {
     return `ADM${year}${count.toString().padStart(4, '0')}`;
   }
 
-  private formatPhoneNumber(phoneNumber: string): string {
-    // Remove any non-digit characters
-    const cleaned = phoneNumber.replace(/\D/g, '');
+  private formatPhoneNumber(phoneNumber: string, countryCode: string): string {
+    // Remove any non-digit characters from both phone number and country code
+    const cleanedNumber = phoneNumber.replace(/\D/g, '');
+    const cleanedCountryCode = countryCode.replace(/\D/g, '');
 
-    // If the number starts with '0', assume it's a Nigerian number and replace '0' with '+234'
-    if (cleaned.startsWith('0')) {
-      return '+234' + cleaned.substring(1);
-    }
-
-    // If the number doesn't start with '+', add it
-    if (!phoneNumber.startsWith('+')) {
-      return '+' + cleaned;
-    }
-
-    return cleaned;
+    // Combine them with + prefix
+    return `+${cleanedCountryCode}${cleanedNumber}`;
   }
 
-  private validatePhoneNumber(phoneNumber: string): boolean {
-    // Basic phone number validation
-    const phoneRegex = /^\+(?:[0-9] ?){6,14}[0-9]$/;
-    return phoneRegex.test(this.formatPhoneNumber(phoneNumber));
+  private validatePhoneNumber(formattedNumber: string): boolean {
+    // Validate the complete international format
+    const phoneRegex = /^\+[0-9]{1,4}[0-9]{10,11}$/;
+    return phoneRegex.test(formattedNumber);
   }
 
   private validateEmail(email: string) {
@@ -490,12 +482,17 @@ export class AuthService {
       throw new EmailValidationException();
     }
 
-    // Format and validate phone number
-    // if (!this.validatePhoneNumber(phoneNumber)) {
-    //   throw new BadRequestException(
-    //     'Invalid phone number format. Please use a valid international format (e.g., +2348012345678)',
-    //   );
-    // }
+    // Format and validate phone number with country code
+    const formattedPhoneNumber = this.formatPhoneNumber(
+      phoneNumber,
+      createUserDto.countryCode,
+    );
+
+    if (!this.validatePhoneNumber(formattedPhoneNumber)) {
+      throw new BadRequestException(
+        'Invalid phone number format. Please check your country code and phone number.',
+      );
+    }
 
     // Check if email is already in use
     const existingEmail = await this.userRepository.findOne({
@@ -517,13 +514,13 @@ export class AuthService {
 
     // Check if phone number is already in use
     const existingPhoneNumber = await this.userRepository.findOne({
-      where: { phoneNumber: phoneNumber },
+      where: { phoneNumber: formattedPhoneNumber },
       withDeleted: true,
     });
 
     if (existingPhoneNumber) {
       throw new ConflictException(
-        `Phone number ${phoneNumber} is already in use`,
+        `Phone number ${formattedPhoneNumber} is already in use`,
       );
     }
 
@@ -539,6 +536,6 @@ export class AuthService {
     // Generate verification token
     const token = Math.floor(100000 + Math.random() * 900000).toString();
 
-    return { existingRole, token, phoneNumber: phoneNumber };
+    return { existingRole, token, phoneNumber: formattedPhoneNumber };
   }
 }

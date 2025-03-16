@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,23 +26,38 @@ import { WebsocketService } from 'src/websockets/websockets.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from 'utils/types';
 import { User } from '../users/entities/user.entity';
+import { CreateQuizDto, UpdateQuizDto } from './dto/quiz.dto';
+import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
+import {
+  CreateAdditionalResourceDto,
+  UpdateAdditionalResourceDto,
+} from './dto/additional-resource.dto';
+import { Quiz } from './entities/quiz.entity';
+import { Comment } from './entities/comment.entity';
+import { AdditionalResource } from './entities/additional_resource.entity';
 
 @Injectable()
 export class CourseService {
   constructor(
     @InjectRepository(Course)
-    private courseRepository: Repository<Course>,
+    private readonly courseRepository: Repository<Course>,
     @InjectRepository(CourseProgress)
     private courseProgressRepository: Repository<CourseProgress>,
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
     @InjectRepository(DownloadableResource)
     private downloadableResourceRepository: Repository<DownloadableResource>,
     private websocketService: WebsocketService,
     private notificationService: NotificationService,
+    @InjectRepository(Quiz)
+    private readonly quizRepository: Repository<Quiz>,
+    @InjectRepository(Comment)
+    private readonly commentRepository: Repository<Comment>,
+    @InjectRepository(AdditionalResource)
+    private readonly resourceRepository: Repository<AdditionalResource>,
   ) {}
 
-  async create(createCourseDto: CreateCourseDto): Promise<Course> {
+  async createCourse(createCourseDto: CreateCourseDto): Promise<Course> {
     try {
       const course = this.courseRepository.create({
         ...createCourseDto,
@@ -522,5 +538,212 @@ export class CourseService {
     }
 
     return progress;
+  }
+
+  // Quiz Methods
+  async createQuiz(createQuizDto: CreateQuizDto) {
+    const course = await this.courseRepository.findOne({
+      where: { id: createQuizDto.courseId },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const quiz = this.quizRepository.create({
+      ...createQuizDto,
+      course,
+    });
+
+    return await this.quizRepository.save(quiz);
+  }
+
+  async getQuizzes(courseId: string) {
+    return await this.quizRepository.find({
+      where: { course: { id: courseId } },
+    });
+  }
+
+  async getQuiz(quizId: string) {
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    return quiz;
+  }
+
+  async updateQuiz(quizId: string, updateQuizDto: UpdateQuizDto) {
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    Object.assign(quiz, updateQuizDto);
+    return await this.quizRepository.save(quiz);
+  }
+
+  async deleteQuiz(quizId: string) {
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found');
+    }
+
+    await this.quizRepository.remove(quiz);
+    return { message: 'Quiz deleted successfully' };
+  }
+
+  // Comment Methods
+  async createComment(createCommentDto: CreateCommentDto, userId: string) {
+    const course = await this.courseRepository.findOne({
+      where: { id: createCommentDto.courseId },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const comment = this.commentRepository.create({
+      ...createCommentDto,
+      course,
+      userId,
+    });
+
+    return await this.commentRepository.save(comment);
+  }
+
+  async getComments(courseId: string) {
+    return await this.commentRepository.find({
+      where: { course: { id: courseId } },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async updateComment(
+    commentId: string,
+    updateCommentDto: UpdateCommentDto,
+    userId: string,
+  ) {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.userId !== userId) {
+      throw new ForbiddenException('You can only update your own comments');
+    }
+
+    Object.assign(comment, updateCommentDto);
+    return await this.commentRepository.save(comment);
+  }
+
+  async deleteComment(commentId: string, userId: string) {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own comments');
+    }
+
+    await this.commentRepository.remove(comment);
+    return { message: 'Comment deleted successfully' };
+  }
+
+  // Additional Resource Methods
+  async createAdditionalResource(
+    createResourceDto: CreateAdditionalResourceDto,
+  ) {
+    const course = await this.courseRepository.findOne({
+      where: { id: createResourceDto.courseId },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: createResourceDto.userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const resource = this.resourceRepository.create({
+      ...createResourceDto,
+      course,
+      uploadedBy: user,
+    });
+
+    return await this.resourceRepository.save(resource);
+  }
+
+  async getAdditionalResources(courseId: string) {
+    return await this.resourceRepository.find({
+      where: { courseId },
+      relations: ['course', 'uploadedBy'],
+    });
+  }
+
+  async updateAdditionalResource(
+    resourceId: string,
+    updateResourceDto: UpdateAdditionalResourceDto,
+    userId: string,
+  ) {
+    const resource = await this.resourceRepository.findOne({
+      where: { id: resourceId },
+      relations: ['uploadedBy'],
+    });
+
+    if (!resource) {
+      throw new NotFoundException('Resource not found');
+    }
+
+    if (resource.uploadedBy.id !== userId) {
+      throw new ForbiddenException(
+        'You can only update resources you uploaded',
+      );
+    }
+
+    Object.assign(resource, updateResourceDto);
+    return await this.resourceRepository.save(resource);
+  }
+
+  async deleteAdditionalResource(resourceId: string, userId: string) {
+    const resource = await this.resourceRepository.findOne({
+      where: { id: resourceId },
+      relations: ['uploadedBy'],
+    });
+
+    if (!resource) {
+      throw new NotFoundException('Resource not found');
+    }
+
+    if (resource.uploadedBy.id !== userId) {
+      throw new ForbiddenException(
+        'You can only delete resources you uploaded',
+      );
+    }
+
+    await this.resourceRepository.remove(resource);
+    return { message: 'Resource deleted successfully' };
   }
 }

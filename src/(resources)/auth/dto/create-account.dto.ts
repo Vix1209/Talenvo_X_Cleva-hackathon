@@ -1,6 +1,14 @@
 import { Optional } from '@nestjs/common';
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { IsEmail, IsString, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+  MinLength,
+  Matches,
+  IsArray,
+} from 'class-validator';
 import {
   CreateAdminProfileDto,
   CreateStudentProfileDto,
@@ -14,6 +22,7 @@ export class CreateUserDto {
     example: '',
   })
   @IsString()
+  @IsNotEmpty()
   firstName: string;
 
   @ApiProperty({
@@ -21,6 +30,7 @@ export class CreateUserDto {
     example: '',
   })
   @IsString()
+  @IsNotEmpty()
   lastName: string;
 
   @IsString()
@@ -29,6 +39,7 @@ export class CreateUserDto {
     example: '',
   })
   @IsEmail()
+  @IsNotEmpty()
   @Unique(['email'])
   email: string;
 
@@ -36,9 +47,24 @@ export class CreateUserDto {
     description: 'The User phone number',
     example: '',
   })
-  @Unique(['phoneNumber'])
   @IsString()
+  @IsNotEmpty()
+  @Matches(/^[0-9]{10,11}$/, {
+    message: 'Phone number must be 10-11 digits without country code',
+  })
+  @Unique(['phoneNumber'])
   phoneNumber: string;
+
+  @ApiProperty({
+    description: 'The User country code',
+    example: '',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[0-9]{1,4}$/, {
+    message: 'Country code must be 1-4 digits without + symbol',
+  })
+  countryCode: string;
 
   @ApiProperty({
     description: 'The User password',
@@ -46,6 +72,8 @@ export class CreateUserDto {
     required: false,
   })
   @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
   @IsOptional()
   password?: string;
 

@@ -5,4 +5,4 @@ import { WebsocketService } from './websockets.service';
   providers: [WebsocketService],
   exports: [WebsocketService],
 })
-export class WebsocketsModule {}
+export class WebsocketModule {}

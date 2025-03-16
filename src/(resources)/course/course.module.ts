@@ -9,7 +9,7 @@ import { User } from '../users/entities/user.entity';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import { DownloadableResource } from './entities/downloadable-resource.entity';
-import { WebsocketsModule } from 'src/websockets/websockets.module';
+import { WebsocketModule } from 'src/websockets/websockets.module';
 import { Role } from '../role/entities/role.entity';
 import { NotificationModule } from '../notification/notification.module';
 
@@ -25,7 +25,7 @@ import { NotificationModule } from '../notification/notification.module';
       DownloadableResource,
       Role,
     ]),
-    WebsocketsModule,
+    WebsocketModule,
     NotificationModule,
   ],
   controllers: [CourseController],
