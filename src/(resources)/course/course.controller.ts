@@ -24,12 +24,7 @@ import {
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
-import {
-  ApiOperation,
-  ApiTags,
-  ApiBearerAuth,
-  ApiExcludeController,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags,  ApiBearerAuth } from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import {
@@ -94,7 +89,7 @@ export class CourseController {
 
   // Downloadable Resource Endpoints ---------------------------------------------------------------------------------------------------------------------------------------
 
-  @Post(':courseId/resources')
+  @Post(':courseId/downloadable-resources')
   @Roles('teacher')
   @ApiTags('Courses - Downloadable Resources')
   @ApiOperation({ summary: 'Add a downloadable resource to a course' })
@@ -108,7 +103,7 @@ export class CourseController {
     });
   }
 
-  @Patch('resources/:id')
+  @Patch('downloadable-resources/:id')
   @Roles('teacher')
   @ApiTags('Courses - Downloadable Resources')
   @ApiOperation({ summary: 'Update a downloadable resource' })
@@ -119,7 +114,7 @@ export class CourseController {
     return await this.courseService.updateDownloadableResource(id, updateDto);
   }
 
-  @Delete('resources/:id')
+  @Delete('downloadable-resources/:id')
   @Roles('teacher')
   @ApiTags('Courses - Downloadable Resources')
   @ApiOperation({ summary: 'Delete a downloadable resource' })
@@ -269,7 +264,7 @@ export class CourseController {
   }
 
   // Additional Resources Endpoints
-  @Post(':courseId/resources')
+  @Post(':courseId/additional-resources')
   @Roles('teacher')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Add an additional resource to a course' })
@@ -283,14 +278,14 @@ export class CourseController {
     return await this.courseService.createAdditionalResource(createResourceDto);
   }
 
-  @Get(':courseId/resources')
+  @Get(':courseId/additional-resources')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Get all additional resources for a course' })
   async getResources(@Param('courseId') courseId: string) {
     return await this.courseService.getAdditionalResources(courseId);
   }
 
-  @Patch('resources/:resourceId')
+  @Patch('additional-resources/:resourceId')
   @Roles('teacher')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Update an additional resource' })
@@ -306,7 +301,7 @@ export class CourseController {
     );
   }
 
-  @Delete('resources/:resourceId')
+  @Delete('additional-resources/:resourceId')
   @Roles('teacher')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Delete an additional resource' })
