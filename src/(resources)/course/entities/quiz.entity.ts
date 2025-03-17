@@ -27,6 +27,9 @@ export class Quiz {
     explanation?: string;
   }[];
 
+  @Column({ default: 0 })
+  duration: number;
+
   @Column({ default: false })
   isPublished: boolean;
 

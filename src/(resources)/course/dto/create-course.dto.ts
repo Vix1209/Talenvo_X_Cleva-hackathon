@@ -9,7 +9,10 @@ import {
 } from 'class-validator';
 
 export class CreateCourseDto {
-  @ApiProperty({ description: 'Title of the course', example: 'Course Title' })
+  @ApiProperty({
+    description: 'Title of the course',
+    example: 'Course Title',
+  })
   @IsString()
   @IsNotEmpty()
   title: string;

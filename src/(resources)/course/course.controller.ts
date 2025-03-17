@@ -24,7 +24,7 @@ import {
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
-import { ApiOperation, ApiTags,  ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import {
@@ -126,7 +126,10 @@ export class CourseController {
 
   @Post('update-progress')
   @ApiTags('Courses - Course Progress and Offline Access')
-  @ApiOperation({ summary: 'Update course progress' })
+  @ApiOperation({
+    summary:
+      'Update course progress while the student is taking the course online',
+  })
   async updateProgress(@Body() updateProgressDto: UpdateProgressDto) {
     return await this.courseService.updateProgress(updateProgressDto);
   }
@@ -140,7 +143,10 @@ export class CourseController {
 
   @Post('sync-offline-progress')
   @ApiTags('Courses - Course Progress and Offline Access')
-  @ApiOperation({ summary: 'Sync offline progress' })
+  @ApiOperation({
+    summary:
+      'Sync offline progress when the student is watching a video offline and then comes back online',
+  })
   async syncOfflineProgress(
     @Body() syncOfflineProgressDto: SyncOfflineProgressDto,
   ) {
