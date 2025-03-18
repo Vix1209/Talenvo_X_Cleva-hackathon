@@ -30,8 +30,8 @@ export class Quiz {
   @Column({ default: 0 })
   duration: number;
 
-  @Column({ default: false })
-  isPublished: boolean;
+  // @Column({ default: false })
+  // isPublished: boolean;
 
   @ManyToOne(() => Course, (course) => course.quizzes)
   course: Course;

@@ -20,7 +20,6 @@ import {
 } from './dto/create-account.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Role } from 'src/(resources)/role/entities/role.entity';
-import { CloudinaryUploadService } from 'src/cloudinary/cloudinaryUpload.service';
 
 import { EmailValidationException } from 'utils';
 import { VerifyEmailDto } from './dto/verifyEmail.dto';

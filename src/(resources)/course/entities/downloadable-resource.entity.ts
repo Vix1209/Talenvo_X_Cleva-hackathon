@@ -14,14 +14,14 @@ export class DownloadableResource {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  name: string;
+  @Column({ nullable: true, type: 'varchar' })
+  name: string | null;
 
-  @Column()
-  url: string;
+  @Column({ nullable: true, type: 'varchar' })
+  url: string | null;
 
-  @Column()
-  type: string;
+  @Column({ nullable: true, type: 'varchar' })
+  type: string | null;
 
   @Column({ type: 'bigint', nullable: true })
   size: number;
@@ -32,7 +32,6 @@ export class DownloadableResource {
   @ManyToOne(() => Course, (course) => course.downloadableResources)
   @JoinColumn()
   course: Course;
-
   @Column()
   courseId: string;
 
