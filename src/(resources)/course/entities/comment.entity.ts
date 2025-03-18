@@ -30,8 +30,8 @@ export class Comment {
   @Column()
   userId: string;
 
-  @Column({ nullable: true })
-  parentCommentId: string;
+  @Column({ nullable: true, type: 'varchar' })
+  parentCommentId: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
