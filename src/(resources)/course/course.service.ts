@@ -40,6 +40,12 @@ import { StorageCalculatorService } from './services/storage-calculator.service'
 import { QuizSubmission } from './entities/quiz-submission.entity';
 import { SubmitQuizDto } from './dto/quiz-submission.dto';
 import { StudentProfile } from '../users/entities/user-profile.entity';
+import { Category } from './entities/category.entity';
+import {
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CategoryResponseDto,
+} from './dto/category.dto';
 
 @Injectable()
 export class CourseService {
@@ -62,13 +68,171 @@ export class CourseService {
     private readonly quizSubmissionRepository: Repository<QuizSubmission>,
     @InjectRepository(StudentProfile)
     private readonly studentProfileRepository: Repository<StudentProfile>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
     private websocketService: WebsocketService,
     private notificationService: NotificationService,
     private storageCalculator: StorageCalculatorService,
   ) {}
 
+  // Category Methods
+  async createCategory(
+    createCategoryDto: CreateCategoryDto,
+  ): Promise<Category> {
+    try {
+      // Check if category with the same name already exists
+      const existingCategory = await this.categoryRepository.findOne({
+        where: { name: createCategoryDto.name },
+      });
+
+      if (existingCategory) {
+        throw new ConflictException(
+          `Category with name "${createCategoryDto.name}" already exists`,
+        );
+      }
+
+      const category = this.categoryRepository.create(createCategoryDto);
+      return await this.categoryRepository.save(category);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        'Failed to create category: ' + error.message,
+      );
+    }
+  }
+
+  async findAllCategories(): Promise<CategoryResponseDto[]> {
+    const categories = await this.categoryRepository.find();
+
+    // Get course counts for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const courseCount = await this.courseRepository.count({
+          where: { categoryId: category.id },
+        });
+
+        return {
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          imageUrl: category.imageUrl,
+          courseCount,
+        };
+      }),
+    );
+
+    return categoriesWithCounts;
+  }
+
+  async findOneCategory(id: string): Promise<CategoryResponseDto> {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      relations: {
+        courses: true,
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    const courseCount = await this.courseRepository.count({
+      where: { categoryId: id },
+    });
+
+    return {
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      imageUrl: category.imageUrl,
+      courseCount,
+    };
+  }
+
+  async updateCategory(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    // If name is being updated, check for conflicts
+    if (updateCategoryDto.name && updateCategoryDto.name !== category.name) {
+      const existingCategory = await this.categoryRepository.findOne({
+        where: { name: updateCategoryDto.name },
+      });
+
+      if (existingCategory) {
+        throw new ConflictException(
+          `Category with name "${updateCategoryDto.name}" already exists`,
+        );
+      }
+    }
+
+    Object.assign(category, updateCategoryDto);
+    return await this.categoryRepository.save(category);
+  }
+
+  async removeCategory(id: string): Promise<void> {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    // Check if there are courses using this category
+    const courseCount = await this.courseRepository.count({
+      where: { categoryId: id },
+    });
+
+    if (courseCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete category that contains ${courseCount} courses. Remove or reassign courses first.`,
+      );
+    }
+
+    await this.categoryRepository.remove(category);
+  }
+
+  async getCoursesByCategory(categoryId: string): Promise<Course[]> {
+    const category = await this.categoryRepository.findOne({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${categoryId} not found`);
+    }
+
+    return await this.courseRepository.find({
+      where: { categoryId },
+      relations: ['user'],
+    });
+  }
+
   async createCourse(createCourseDto: CreateCourseDto): Promise<Course> {
     try {
+      // If categoryId is provided, verify the category exists
+      if (createCourseDto.categoryId) {
+        const category = await this.categoryRepository.findOne({
+          where: { id: createCourseDto.categoryId },
+        });
+
+        if (!category) {
+          throw new NotFoundException(
+            `Category with ID ${createCourseDto.categoryId} not found`,
+          );
+        }
+      }
+
       const course = this.courseRepository.create({
         ...createCourseDto,
       });
@@ -89,6 +253,7 @@ export class CourseService {
         'quizzes',
         'additionalResources',
         'downloadableResources',
+        'category',
       ],
     });
   }
@@ -102,6 +267,7 @@ export class CourseService {
         'quizzes',
         'additionalResources',
         'downloadableResources',
+        'category',
       ],
     });
 
@@ -114,6 +280,20 @@ export class CourseService {
 
   async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
     const course = await this.findOne(id);
+
+    // If categoryId is provided, verify the category exists
+    if (updateCourseDto.categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: updateCourseDto.categoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          `Category with ID ${updateCourseDto.categoryId} not found`,
+        );
+      }
+    }
+
     Object.assign(course, updateCourseDto);
 
     // Notify connected clients about the course update

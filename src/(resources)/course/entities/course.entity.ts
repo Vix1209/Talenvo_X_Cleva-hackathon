@@ -3,6 +3,7 @@ import { Comment } from 'src/(resources)/course/entities/comment.entity';
 import { Quiz } from 'src/(resources)/course/entities/quiz.entity';
 import { User } from 'src/(resources)/users/entities/user.entity';
 import { DownloadableResource } from './downloadable-resource.entity';
+import { Category } from './category.entity';
 import {
   Column,
   CreateDateColumn,
@@ -39,6 +40,13 @@ export class Course {
 
   @Column({ nullable: true })
   lastSyncedAt: Date;
+
+  @ManyToOne(() => Category, (category) => category.courses, { nullable: true })
+  @JoinColumn()
+  category: Category;
+
+  @Column({ nullable: true })
+  categoryId: string;
 
   @OneToMany(() => Comment, (comment) => comment.course)
   comments: Comment[];
