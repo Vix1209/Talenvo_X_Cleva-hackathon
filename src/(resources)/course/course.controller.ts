@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CourseService } from './course.service';
@@ -34,6 +35,7 @@ import {
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { SubmitQuizDto } from './dto/quiz-submission.dto';
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
@@ -186,6 +188,7 @@ export class CourseController {
 
   // Quiz Endpoints
   @Post(':courseId/quizzes')
+  @UseGuards(RolesGuard)
   @Roles('teacher')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Create a quiz for a course' })
@@ -212,6 +215,7 @@ export class CourseController {
   }
 
   @Patch('quizzes/:quizId')
+  @UseGuards(RolesGuard)
   @Roles('teacher')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Update a quiz' })
@@ -223,11 +227,50 @@ export class CourseController {
   }
 
   @Delete('quizzes/:quizId')
+  @UseGuards(RolesGuard)
   @Roles('teacher')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Delete a quiz' })
   async deleteQuiz(@Param('quizId') quizId: string) {
     return await this.courseService.deleteQuiz(quizId);
+  }
+
+  // Quiz Submission Endpoints
+  @Post('quizzes/submit')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('student')
+  @ApiTags('Courses - Quizzes')
+  @ApiOperation({ summary: 'Submit a quiz answer' })
+  async submitQuiz(
+    @Body() submitQuizDto: SubmitQuizDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    if (!req.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return await this.courseService.submitQuiz(submitQuizDto, req.user.id);
+  }
+
+  @Get('student/quiz-submissions')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('student')
+  @ApiTags('Courses - Quizzes')
+  @ApiOperation({
+    summary: 'Get all quiz submissions for the logged-in student',
+  })
+  async getMyQuizSubmissions(@Req() req: Request & { user: { id: string } }) {
+    if (!req.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+    return await this.courseService.getStudentQuizSubmissions(req.user.id);
+  }
+
+  @Get('quiz-submissions/:submissionId')
+  @UseGuards(JwtGuard)
+  @ApiTags('Courses - Quizzes')
+  @ApiOperation({ summary: 'Get a specific quiz submission' })
+  async getQuizSubmission(@Param('submissionId') submissionId: string) {
+    return await this.courseService.getQuizSubmission(submissionId);
   }
 
   // Comment Endpoints

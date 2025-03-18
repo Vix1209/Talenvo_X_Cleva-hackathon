@@ -16,18 +16,22 @@ import { WebsocketService } from 'src/websockets/websockets.service';
 import { NotificationService } from '../notification/notification.service';
 import { StorageCalculatorService } from './services/storage-calculator.service';
 import { Notification } from '../notification/entities/notification.entity';
+import { QuizSubmission } from './entities/quiz-submission.entity';
+import { StudentProfile } from '../users/entities/user-profile.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Course,
       CourseProgress,
-      Comment,
+      DownloadableResource,
       Quiz,
+      QuizSubmission,
+      Comment,
       AdditionalResource,
       User,
+      StudentProfile,
       Notification,
-      DownloadableResource,
       Role,
     ]),
     WebsocketModule,
