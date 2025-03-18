@@ -12,6 +12,10 @@ import { DownloadableResource } from './entities/downloadable-resource.entity';
 import { WebsocketModule } from 'src/websockets/websockets.module';
 import { Role } from '../role/entities/role.entity';
 import { NotificationModule } from '../notification/notification.module';
+import { WebsocketService } from 'src/websockets/websockets.service';
+import { NotificationService } from '../notification/notification.service';
+import { StorageCalculatorService } from './services/storage-calculator.service';
+import { Notification } from '../notification/entities/notification.entity';
 
 @Module({
   imports: [
@@ -22,6 +26,7 @@ import { NotificationModule } from '../notification/notification.module';
       Quiz,
       AdditionalResource,
       User,
+      Notification,
       DownloadableResource,
       Role,
     ]),
@@ -29,7 +34,12 @@ import { NotificationModule } from '../notification/notification.module';
     NotificationModule,
   ],
   controllers: [CourseController],
-  providers: [CourseService],
+  providers: [
+    CourseService,
+    WebsocketService,
+    NotificationService,
+    StorageCalculatorService,
+  ],
   exports: [CourseService],
 })
 export class CourseModule {}

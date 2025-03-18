@@ -141,6 +141,15 @@ export class CourseController {
     return await this.courseService.downloadCourse(downloadCourseDto);
   }
 
+  @Get('estimate-size/:courseId')
+  @ApiTags('Courses - Course Progress and Offline Access')
+  @ApiOperation({
+    summary: 'Estimate the size of a course for storage planning',
+  })
+  async estimateCourseSize(@Param('courseId') courseId: string) {
+    return await this.courseService.estimateCourseSize(courseId);
+  }
+
   @Post('sync-offline-progress')
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({

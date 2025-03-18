@@ -21,6 +21,7 @@ import {
   DownloadCourseDto,
   SyncOfflineProgressDto,
   UpdateProgressDto,
+  CourseStorageInfoDto,
 } from './dto/course-progress.dto';
 import { WebsocketService } from 'src/websockets/websockets.service';
 import { NotificationService } from '../notification/notification.service';
@@ -35,6 +36,7 @@ import {
 import { Quiz } from './entities/quiz.entity';
 import { Comment } from './entities/comment.entity';
 import { AdditionalResource } from './entities/additional_resource.entity';
+import { StorageCalculatorService } from './services/storage-calculator.service';
 
 @Injectable()
 export class CourseService {
@@ -47,14 +49,15 @@ export class CourseService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(DownloadableResource)
     private downloadableResourceRepository: Repository<DownloadableResource>,
-    private websocketService: WebsocketService,
-    private notificationService: NotificationService,
     @InjectRepository(Quiz)
     private readonly quizRepository: Repository<Quiz>,
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
     @InjectRepository(AdditionalResource)
     private readonly resourceRepository: Repository<AdditionalResource>,
+    private websocketService: WebsocketService,
+    private notificationService: NotificationService,
+    private storageCalculator: StorageCalculatorService,
   ) {}
 
   async createCourse(createCourseDto: CreateCourseDto): Promise<Course> {
@@ -320,98 +323,153 @@ export class CourseService {
     return savedProgress;
   }
 
-  async downloadCourse(
-    downloadDto: DownloadCourseDto,
-  ): Promise<{ course: Course; progress: CourseProgress }> {
+  async downloadCourse(downloadDto: DownloadCourseDto): Promise<{
+    course: Course;
+    progress: CourseProgress;
+    storageInfo: CourseStorageInfoDto;
+  }> {
     const { userId, courseId, deviceInfo } = downloadDto;
 
-    // Check if course exists and is available for offline access
-    const course = await this.findOne(courseId);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    try {
+      // Check if course exists and is available for offline access
+      const course = await this.findOne(courseId);
+      const user = await this.userRepository.findOne({ where: { id: userId } });
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    if (!course.isOfflineAccessible) {
-      throw new BadRequestException(
-        'This course is not available for offline access',
-      );
-    }
-
-    // Find or create progress record
-    let progress = await this.courseProgressRepository.findOne({
-      where: { userId, courseId },
-    });
-
-    if (!progress) {
-      progress = this.courseProgressRepository.create({
-        userId,
-        courseId,
-        progressPercentage: 0,
-        isCompleted: false,
-        isDownloadedOffline: true,
-        offlineAccessHistory: [
-          {
-            downloadedAt: new Date(),
-            syncedAt: undefined,
-            deviceInfo: {
-              platform: deviceInfo.platform,
-              browser: deviceInfo.browser,
-              version: deviceInfo.version,
-              screenSize: deviceInfo.screenSize,
-              model: deviceInfo.model,
-              os: deviceInfo.os,
-            },
-          },
-        ],
-      });
-    } else {
-      progress.isDownloadedOffline = true;
-
-      // Initialize offlineAccessHistory if it doesn't exist
-      if (!progress.offlineAccessHistory) {
-        progress.offlineAccessHistory = [];
+      if (!user) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
       }
 
-      progress.offlineAccessHistory.push({
-        downloadedAt: new Date(),
-        syncedAt: undefined,
-        deviceInfo: {
-          platform: deviceInfo.platform,
-          browser: deviceInfo.browser,
-          version: deviceInfo.version,
-          screenSize: deviceInfo.screenSize,
-          model: deviceInfo.model,
-          os: deviceInfo.os,
+      if (!course.isOfflineAccessible) {
+        throw new BadRequestException(
+          'This course is not available for offline access',
+        );
+      }
+
+      // Calculate estimated size of the course
+      const estimatedSize = this.storageCalculator.calculateCourseSize(course);
+
+      // Storage information to return to client
+      const storageInfo: CourseStorageInfoDto = {
+        estimatedSize,
+        estimatedSizeFormatted:
+          this.storageCalculator.formatSize(estimatedSize),
+        totalStorageUsed: 0, // To be determined by frontend
+        maxStorageAllowed: 0, // To be determined by frontend
+        hasEnoughStorage: true, // To be determined by frontend
+      };
+
+      // Find or create progress record
+      let progress = await this.courseProgressRepository.findOne({
+        where: { userId, courseId },
+      });
+
+      if (!progress) {
+        progress = this.courseProgressRepository.create({
+          userId,
+          courseId,
+          progressPercentage: 0,
+          isCompleted: false,
+          isDownloadedOffline: true,
+          offlineAccessHistory: [
+            {
+              downloadedAt: new Date(),
+              syncedAt: undefined,
+              deviceInfo: {
+                platform: deviceInfo.platform,
+                browser: deviceInfo.browser,
+                version: deviceInfo.version,
+                screenSize: deviceInfo.screenSize,
+                model: deviceInfo.model,
+                os: deviceInfo.os,
+              },
+            },
+          ],
+        });
+      } else {
+        progress.isDownloadedOffline = true;
+
+        // Initialize offlineAccessHistory if it doesn't exist
+        if (!progress.offlineAccessHistory) {
+          progress.offlineAccessHistory = [];
+        }
+
+        progress.offlineAccessHistory.push({
+          downloadedAt: new Date(),
+          syncedAt: undefined,
+          deviceInfo: {
+            platform: deviceInfo.platform,
+            browser: deviceInfo.browser,
+            version: deviceInfo.version,
+            screenSize: deviceInfo.screenSize,
+            model: deviceInfo.model,
+            os: deviceInfo.os,
+          },
+        });
+      }
+
+      // Increment download count for the course
+      course.downloadCount = (course.downloadCount || 0) + 1;
+      await this.courseRepository.save(course);
+
+      const savedProgress = await this.courseProgressRepository.save(progress);
+
+      // Send notification for course download
+      if (!userId) {
+        throw new ConflictException(
+          'User ID is required to send notifications',
+        );
+      }
+      await this.notificationService.create({
+        recipientId: userId,
+        type: NotificationType.SMS,
+        title: 'Course Downloaded Successfully',
+        content: `Hi ${user.firstName}, "${course.title}" has been downloaded for offline access. You can now learn even without an internet connection!`,
+        phoneNumber: user.phoneNumber,
+        metadata: {
+          courseId: course.id,
+          courseName: course.title,
+          deviceInfo,
+          downloadedAt: new Date(),
+          estimatedSize: storageInfo.estimatedSizeFormatted,
         },
       });
+
+      return { course, progress: savedProgress, storageInfo };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new Error(`Failed to download course: ${error.message}`);
     }
+  }
 
-    // Increment download count for the course
-    course.downloadCount = (course.downloadCount || 0) + 1;
-    await this.courseRepository.save(course);
+  /**
+   * Estimate the size of a course for storage planning
+   */
+  async estimateCourseSize(
+    courseId: string,
+  ): Promise<{ estimatedSize: number; estimatedSizeFormatted: string }> {
+    try {
+      const course = await this.findOne(courseId);
 
-    const savedProgress = await this.courseProgressRepository.save(progress);
-    if (!userId) {
-      throw new ConflictException('User ID is required to send notifications');
+      if (!course) {
+        throw new NotFoundException(`Course with ID ${courseId} not found`);
+      }
+
+      const estimatedSize = this.storageCalculator.calculateCourseSize(course);
+      const estimatedSizeFormatted =
+        this.storageCalculator.formatSize(estimatedSize);
+
+      return { estimatedSize, estimatedSizeFormatted };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new Error(`Failed to estimate course size: ${error.message}`);
     }
-    // Send notification for course download
-    await this.notificationService.create({
-      recipientId: userId,
-      type: NotificationType.SMS,
-      title: 'Course Downloaded Successfully',
-      content: `Hi ${user.firstName}, "${course.title}" has been downloaded for offline access. You can now learn even without an internet connection!`,
-      phoneNumber: user.phoneNumber,
-      metadata: {
-        courseId: course.id,
-        courseName: course.title,
-        deviceInfo,
-        downloadedAt: new Date(),
-      },
-    });
-
-    return { course, progress: savedProgress };
   }
 
   async syncOfflineProgress(

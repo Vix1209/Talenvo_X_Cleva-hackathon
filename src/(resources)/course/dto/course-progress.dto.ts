@@ -155,3 +155,35 @@ export class SyncOfflineProgressDto extends UpdateProgressDto {
   @Type(() => Date)
   lastModifiedOffline: Date;
 }
+
+export class CourseStorageInfoDto {
+  @ApiProperty({
+    description: 'Estimated size of the course in bytes',
+    example: 1024000,
+  })
+  estimatedSize: number;
+
+  @ApiProperty({
+    description: 'Human-readable formatted size of the course',
+    example: '1.00 MB',
+  })
+  estimatedSizeFormatted: string;
+
+  @ApiProperty({
+    description: 'Total storage used by the user in bytes',
+    example: 5120000,
+  })
+  totalStorageUsed: number;
+
+  @ApiProperty({
+    description: 'Maximum storage allowed for the user in bytes',
+    example: 104857600,
+  })
+  maxStorageAllowed: number;
+
+  @ApiProperty({
+    description: 'Whether the user has enough storage to download the course',
+    example: true,
+  })
+  hasEnoughStorage: boolean;
+}
