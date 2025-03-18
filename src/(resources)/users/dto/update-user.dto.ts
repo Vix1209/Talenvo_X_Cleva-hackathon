@@ -322,27 +322,11 @@ export class TeacherProfileResponseDto {
 
 // ------------------ Admin Profile DTOs ------------------ //
 export class CreateAdminProfileDto {
-  @ApiPropertyOptional({
-    description: 'Profile picture URL',
-    example: 'https://example.com/images/admin.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
   @IsOptional()
   lastLogin?: string;
 }
 
 export class UpdateAdminProfileDto {
-  @ApiPropertyOptional({
-    description: 'Profile picture URL',
-    example: 'https://example.com/images/admin.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
   @IsOptional()
   lastLogin?: string;
 }
@@ -350,10 +334,6 @@ export class UpdateAdminProfileDto {
 export class AdminProfileResponseDto {
   @IsUUID()
   id: string;
-
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
 
   @IsOptional()
   lastLogin?: string;

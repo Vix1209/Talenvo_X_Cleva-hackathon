@@ -13,27 +13,35 @@ export class CreateDownloadableResourceDto {
   @ApiProperty({
     description: 'Name of the resource',
     example: 'Introduction to Programming',
+    required: false,
   })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @ApiProperty({
     description: 'URL of the resource',
     example: 'https://example.com/intro-to-programming.pdf',
+    required: false,
   })
-  @IsString()
-  @IsNotEmpty()
-  url: string;
+  @IsOptional()
+  url?: string;
 
   @ApiProperty({
     description: 'Type of the resource (pdf, video, etc.)',
-    example: 'pdf',
+    example: {
+      pdf: ResourceType.PDF,
+      video: ResourceType.VIDEO,
+      link: ResourceType.LINK,
+      image: ResourceType.IMAGE,
+      audio: ResourceType.AUDIO,
+      document: ResourceType.DOCUMENT,
+      text: ResourceType.TEXT,
+    },
+    required: false,
   })
-  @IsString()
-  @IsNotEmpty()
   @IsEnum(ResourceType)
-  type: ResourceType;
+  @IsOptional()
+  type?: ResourceType;
 
   @ApiProperty({
     description: 'Size of the resource in bytes',
@@ -44,13 +52,8 @@ export class CreateDownloadableResourceDto {
   @IsOptional()
   size?: number;
 
-  @ApiProperty({
-    description: 'Course ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 }
 
 export class UpdateDownloadableResourceDto {

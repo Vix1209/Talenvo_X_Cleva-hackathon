@@ -58,7 +58,7 @@ export class CourseController {
   // Category Endpoints ---------------------------------------------------------------------
 
   @Post('categories')
-  @Roles('admin')
+  @Roles('teacher', 'admin')
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Create a new course category' })
   async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
@@ -80,7 +80,7 @@ export class CourseController {
   }
 
   @Patch('categories/:id')
-  @Roles('admin')
+  @Roles('teacher', 'admin')
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Update a category' })
   async updateCategory(
@@ -91,7 +91,7 @@ export class CourseController {
   }
 
   @Delete('categories/:id')
-  @Roles('admin')
+  @Roles('teacher', 'admin')
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Delete a category' })
   async removeCategory(@Param('id') id: string) {
@@ -110,7 +110,7 @@ export class CourseController {
 
   @Post()
   @ApiTags('Course Management')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiOperation({ summary: 'Create a new course' })
   async create(
     @Body() createCourseDto: CreateCourseDto,
@@ -177,7 +177,7 @@ export class CourseController {
   }
 
   @Patch(':id')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Course Management')
   @ApiOperation({ summary: 'Update a course' })
   async update(
@@ -188,7 +188,7 @@ export class CourseController {
   }
 
   @Delete(':id')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Course Management')
   @ApiOperation({ summary: 'Delete a course' })
   async remove(@Param('id') id: string) {
@@ -198,21 +198,19 @@ export class CourseController {
   // Downloadable Resource Endpoints ---------------------------------------------------------------------------------------------------------------------------------------
 
   @Post(':courseId/downloadable-resources')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Downloadable Resources')
   @ApiOperation({ summary: 'Add a downloadable resource to a course' })
   async addDownloadableResource(
     @Param('courseId') courseId: string,
     @Body() createDto: CreateDownloadableResourceDto,
   ) {
-    return await this.courseService.addDownloadableResource({
-      ...createDto,
-      courseId,
-    });
+    createDto.courseId = courseId;
+    return await this.courseService.addDownloadableResource(createDto);
   }
 
   @Patch('downloadable-resources/:id')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Downloadable Resources')
   @ApiOperation({ summary: 'Update a downloadable resource' })
   async updateDownloadableResource(
@@ -223,7 +221,7 @@ export class CourseController {
   }
 
   @Delete('downloadable-resources/:id')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Downloadable Resources')
   @ApiOperation({ summary: 'Delete a downloadable resource' })
   async removeDownloadableResource(@Param('id') id: string) {
@@ -245,7 +243,12 @@ export class CourseController {
   @Post('download')
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({ summary: 'Download a course for offline access' })
-  async downloadCourse(@Body() downloadCourseDto: DownloadCourseDto) {
+  async downloadCourse(
+    @Body() downloadCourseDto: DownloadCourseDto,
+    @Req() request: Request & { user: { id: string } },
+  ) {
+    const userId = request.user.id;
+    downloadCourseDto.userId = userId;
     return await this.courseService.downloadCourse(downloadCourseDto);
   }
 
@@ -429,7 +432,7 @@ export class CourseController {
 
   // Additional Resources Endpoints
   @Post(':courseId/additional-resources')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Add an additional resource to a course' })
   async createResource(
@@ -450,7 +453,7 @@ export class CourseController {
   }
 
   @Patch('additional-resources/:resourceId')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Update an additional resource' })
   async updateResource(
@@ -466,7 +469,7 @@ export class CourseController {
   }
 
   @Delete('additional-resources/:resourceId')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Additional Resources')
   @ApiOperation({ summary: 'Delete an additional resource' })
   async deleteResource(

@@ -10,12 +10,18 @@ import {
 import { ResourceType } from 'utils/types';
 
 export class CreateAdditionalResourceDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The title of the resource',
+    example: 'Resource Title',
+  })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The description of the resource',
+    example: 'This is a description of the resource',
+  })
   @IsString()
   @IsOptional()
   description?: string;
@@ -25,59 +31,81 @@ export class CreateAdditionalResourceDto {
   @IsNotEmpty()
   type: ResourceType;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The URL of the resource',
+    example: 'https://example.com/resource.pdf',
+  })
   @IsUrl()
   @IsNotEmpty()
   url: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The size of the file in bytes',
+    example: 1024,
+  })
   @IsOptional()
   @IsNumber()
   fileSize?: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The MIME type of the file',
+    example: 'application/pdf',
+  })
   @IsOptional()
   @IsString()
   mimeType?: string;
 
-  @ApiProperty()
   @IsString()
-  @IsNotEmpty()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
-  @ApiProperty()
   @IsString()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 }
 
 export class UpdateAdditionalResourceDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The title of the resource',
+    example: 'Resource Title',
+  })
   @IsOptional()
   @IsString()
   title?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The description of the resource',
+    example: 'This is a description of the resource',
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ enum: ResourceType })
+  @ApiProperty({ enum: ResourceType, default: ResourceType.LINK })
   @IsOptional()
   @IsEnum(ResourceType)
   type?: ResourceType;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The URL of the resource',
+    example: 'https://example.com/resource.pdf',
+  })
   @IsOptional()
   @IsUrl()
   url?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The size of the file in bytes',
+    example: 1024,
+  })
   @IsOptional()
   @IsNumber()
   fileSize?: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The MIME type of the file',
+    example: 'application/pdf',
+  })
   @IsOptional()
   @IsString()
   mimeType?: string;

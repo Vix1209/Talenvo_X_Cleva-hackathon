@@ -109,11 +109,6 @@ export class UpdateProgressDto {
 }
 
 export class DownloadCourseDto {
-  @ApiProperty({
-    description: 'User ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsUUID()
   @IsOptional()
   userId?: string;
 
@@ -127,7 +122,14 @@ export class DownloadCourseDto {
 
   @ApiProperty({
     description: 'Device information',
-    example: 'iPhone 13',
+    example: {
+      platform: 'web',
+      browser: 'Chrome',
+      version: '90.0.4430.93',
+      screenSize: '1920x1080',
+      model: 'MacBook Pro',
+      os: 'Mac OS',
+    },
     type: DeviceInfoDto,
   })
   @IsObject()
@@ -139,7 +141,14 @@ export class DownloadCourseDto {
 export class SyncOfflineProgressDto extends UpdateProgressDto {
   @ApiProperty({
     description: 'Device information',
-    example: 'iPhone 13',
+    example: {
+      platform: 'web',
+      browser: 'Chrome',
+      version: '90.0.4430.93',
+      screenSize: '1920x1080',
+      model: 'MacBook Pro',
+      os: 'Mac OS',
+    },
     type: DeviceInfoDto,
   })
   @IsObject()

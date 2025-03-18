@@ -25,7 +25,7 @@ import {
 } from './dto/course-progress.dto';
 import { WebsocketService } from 'src/websockets/websockets.service';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from 'utils/types';
+import { NotificationType, ResourceType } from 'utils/types';
 import { User } from '../users/entities/user.entity';
 import { CreateQuizDto, UpdateQuizDto } from './dto/quiz.dto';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
@@ -368,10 +368,33 @@ export class CourseService {
   async addDownloadableResource(
     createDto: CreateDownloadableResourceDto,
   ): Promise<DownloadableResource> {
+    if (!createDto.courseId) {
+      throw new BadRequestException('Course ID is required');
+    }
+
+    if (
+      createDto.type === ResourceType.LINK ||
+      createDto.type === ResourceType.IMAGE ||
+      createDto.type === ResourceType.AUDIO ||
+      createDto.type === ResourceType.DOCUMENT ||
+      createDto.type === ResourceType.TEXT ||
+      createDto.type === ResourceType.VIDEO ||
+      createDto.type === ResourceType.PDF
+    ) {
+      if (!createDto.url) {
+        throw new BadRequestException('URL is required');
+      }
+    }
+
     const course = await this.findOne(createDto.courseId);
 
     const resource = this.downloadableResourceRepository.create({
       ...createDto,
+      name: createDto.name || '',
+      url: createDto.url || '',
+      type: createDto.type || '',
+      size: createDto.size || 0,
+      courseId: createDto.courseId,
       lastModified: new Date(),
     });
 
@@ -910,10 +933,25 @@ export class CourseService {
       throw new NotFoundException('Course not found');
     }
 
+    let parentComment = await this.commentRepository.findOne({
+      where: { id: createCommentDto.parentCommentId },
+    });
+
+    if (parentComment) {
+      if (parentComment.courseId !== course.id) {
+        throw new BadRequestException('Parent comment not found');
+      }
+    }
+
+    if (!parentComment) {
+      parentComment = null;
+    }
+
     const comment = this.commentRepository.create({
       ...createCommentDto,
       course,
       userId,
+      parentCommentId: parentComment?.id || null,
     });
 
     return await this.commentRepository.save(comment);
