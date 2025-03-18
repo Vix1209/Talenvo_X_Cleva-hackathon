@@ -18,6 +18,7 @@ import { StorageCalculatorService } from './services/storage-calculator.service'
 import { Notification } from '../notification/entities/notification.entity';
 import { QuizSubmission } from './entities/quiz-submission.entity';
 import { StudentProfile } from '../users/entities/user-profile.entity';
+import { Category } from './entities/category.entity';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StudentProfile } from '../users/entities/user-profile.entity';
       StudentProfile,
       Notification,
       Role,
+      Category,
     ]),
     WebsocketModule,
     NotificationModule,

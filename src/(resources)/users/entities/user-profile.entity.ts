@@ -20,9 +20,6 @@ export class StudentProfile {
   user: User;
 
   @Column({ nullable: true })
-  profilePicture?: string;
-
-  @Column({ nullable: true })
   gradeLevel: string;
 
   @Column({ nullable: true, type: 'text' })
@@ -56,9 +53,6 @@ export class TeacherProfile {
   @OneToOne(() => User, (contestant) => contestant.teacherProfile)
   @JoinColumn()
   user: User;
-
-  @Column({ nullable: true })
-  profilePicture?: string;
 
   @Column({ nullable: true, type: 'text' })
   bio?: string;
@@ -97,9 +91,6 @@ export class AdminProfile {
   @OneToOne(() => User, (contestant) => contestant.adminProfile)
   @JoinColumn()
   user: User;
-
-  @Column({ nullable: true })
-  profilePicture?: string;
 
   @Column({ nullable: true })
   lastLogin?: string;

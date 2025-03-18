@@ -9,6 +9,7 @@ import {
   UseGuards,
   Req,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CourseService } from './course.service';
@@ -25,7 +26,12 @@ import {
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
-import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import {
@@ -36,12 +42,71 @@ import { JwtGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { SubmitQuizDto } from './dto/quiz-submission.dto';
+import {
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CategoryResponseDto,
+} from './dto/category.dto';
+import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
 @ApiBearerAuth('JWT')
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
+
+  // Category Endpoints ---------------------------------------------------------------------
+
+  @Post('categories')
+  @Roles('admin')
+  @ApiTags('Course Categories')
+  @ApiOperation({ summary: 'Create a new course category' })
+  async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
+    return await this.courseService.createCategory(createCategoryDto);
+  }
+
+  @Get('categories')
+  @ApiTags('Course Categories')
+  @ApiOperation({ summary: 'Get all course categories' })
+  async findAllCategories(): Promise<CategoryResponseDto[]> {
+    return await this.courseService.findAllCategories();
+  }
+
+  @Get('categories/:id')
+  @ApiTags('Course Categories')
+  @ApiOperation({ summary: 'Get a category by ID' })
+  async findOneCategory(@Param('id') id: string): Promise<CategoryResponseDto> {
+    return await this.courseService.findOneCategory(id);
+  }
+
+  @Patch('categories/:id')
+  @Roles('admin')
+  @ApiTags('Course Categories')
+  @ApiOperation({ summary: 'Update a category' })
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
+    return await this.courseService.updateCategory(id, updateCategoryDto);
+  }
+
+  @Delete('categories/:id')
+  @Roles('admin')
+  @ApiTags('Course Categories')
+  @ApiOperation({ summary: 'Delete a category' })
+  async removeCategory(@Param('id') id: string) {
+    await this.courseService.removeCategory(id);
+    return { message: 'Category deleted successfully' };
+  }
+
+  @Get('by-category/:categoryId')
+  @ApiTags('Course Categories')
+  @ApiOperation({ summary: 'Get courses by category' })
+  async getCoursesByCategory(@Param('categoryId') categoryId: string) {
+    return await this.courseService.getCoursesByCategory(categoryId);
+  }
+
+  // Course Endpoints ---------------------------------------------------------------------
 
   @Post()
   @ApiTags('Course Management')
@@ -58,9 +123,50 @@ export class CourseController {
 
   @Get()
   @ApiTags('Course Management')
-  @ApiOperation({ summary: 'Get all courses' })
-  async findAll() {
-    return await this.courseService.findAll();
+  @ApiOperation({
+    summary: 'Get all courses with filtering, sorting, and pagination',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search courses by title or description',
+  })
+  @ApiQuery({
+    name: 'categoryId',
+    required: false,
+    type: String,
+    description: 'Filter courses by category ID',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description:
+      'Field to sort by (title, createdAt, updatedAt, downloadCount)',
+    enum: ['title', 'createdAt', 'updatedAt', 'downloadCount'],
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    type: String,
+    description: 'Sort order (ASC or DESC)',
+    enum: ['ASC', 'DESC'],
+  })
+  async findAll(@Query() queryOptions: QueryCourseDto) {
+    return await this.courseService.findAll(queryOptions);
   }
 
   @Get(':id')

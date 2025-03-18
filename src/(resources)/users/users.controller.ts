@@ -8,11 +8,23 @@ import {
   Delete,
   Query,
   UseGuards,
+  Put,
+  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtGuard } from '../auth/guard/jwt.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
@@ -61,6 +73,76 @@ export class UsersController {
     return {
       status: 'success',
       ...result,
+    };
+  }
+
+  @Post(':id/update-profile-image')
+  @UseGuards(JwtGuard)
+  @ApiBearerAuth('JWT')
+  @UseInterceptors(FileInterceptor('profileImage'))
+  @ApiOperation({ summary: 'Update profile image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        profileImage: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async uploadFile(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const data = await this.usersService.updateProfileImage(id, file);
+    return {
+      data,
+      status: 'success',
+    };
+  }
+
+  @Patch(':id/status-toggle')
+  @UseGuards(JwtGuard, RolesGuard)
+  @ApiBearerAuth('JWT')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Deactivate or activate an account' })
+  async deactivateUser(@Param('id') id: string) {
+    const data = await this.usersService.toggleAccountStatus(id);
+    return {
+      data,
+      status: 'success',
+    };
+  }
+
+  @Delete(':id/delete')
+  @UseGuards(JwtGuard, RolesGuard)
+  @ApiBearerAuth('JWT')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Delete an account' })
+  async remove(@Param('id') id: string) {
+    const data = await this.usersService.deleteAccount(id);
+    return {
+      data,
+      status: 'success',
+    };
+  }
+
+  @Put(':id/restore')
+  @UseGuards(JwtGuard, RolesGuard)
+  @ApiBearerAuth('JWT')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Restore an account' })
+  async restore(@Param('id') id: string) {
+    const data = await this.usersService.restoreAccount(id);
+    return {
+      data,
+      status: 'success',
     };
   }
 }

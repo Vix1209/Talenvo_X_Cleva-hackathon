@@ -54,7 +54,6 @@ export class AuthService {
 
     private jwtService: JwtService,
     private mailService: MailService,
-    private cloudinaryUploadService: CloudinaryUploadService,
     private notificationService: NotificationService,
   ) {}
 
@@ -117,6 +116,7 @@ export class AuthService {
       password: hashedPassword,
       verificationToken: token,
       role: existingRole,
+      roleName: existingRole.name,
       phoneNumber,
     });
 
@@ -126,7 +126,6 @@ export class AuthService {
     const studentProfile = this.studentProfileRepository.create({
       user: newAccount,
       studentId: await this.generateStudentId(),
-      profilePicture: createStudentDto.profilePicture,
       gradeLevel: createStudentDto.gradeLevel,
       preferredSubjects: createStudentDto.preferredSubjects,
       learningGoals: createStudentDto.learningGoals,
@@ -173,6 +172,7 @@ export class AuthService {
       password: hashedPassword,
       verificationToken: token,
       role: existingRole,
+      roleName: existingRole.name,
       phoneNumber,
     });
 
@@ -182,7 +182,6 @@ export class AuthService {
     const teacherProfile = this.teacherProfileRepository.create({
       user: newAccount,
       teacherId: await this.generateTeacherId(),
-      profilePicture: createTeacherDto.profilePicture,
       bio: createTeacherDto.bio,
       subjectsTaught: createTeacherDto.subjectsTaught,
       educationLevel: createTeacherDto.educationLevel,
@@ -230,6 +229,7 @@ export class AuthService {
       password: hashedPassword,
       verificationToken: token,
       role: existingRole,
+      roleName: existingRole.name,
       phoneNumber,
     });
 
@@ -239,7 +239,6 @@ export class AuthService {
     const adminProfile = this.adminProfileRepository.create({
       user: newAccount,
       adminId: await this.generateAdminId(),
-      profilePicture: createAdminDto.profilePicture,
       lastLogin: new Date().toISOString(),
     });
 

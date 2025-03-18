@@ -12,12 +12,14 @@ export function paginate<T>(
   array: T[],
   size: number,
   page: number,
+  totalPages?: number,
 ): PaginationData<T> {
   let data: T[];
   if (size * (page - 1) > array.length) data = [];
   else
     data = array.slice(size * (page - 1), Math.min(size * page, array.length));
   let lastPage = Math.ceil(array.length / size);
+
   // let previousPage = page - 1;
   // let nextPage = page + 1 > lastPage ? 0 : page + 1;
   return {
@@ -26,6 +28,7 @@ export function paginate<T>(
       limit: size,
       currentPage: page,
       lastPage,
+      totalPages,
     },
   };
 }

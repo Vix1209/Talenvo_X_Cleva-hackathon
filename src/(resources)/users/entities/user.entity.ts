@@ -41,8 +41,8 @@ export class User {
   @Column({ unique: true })
   phoneNumber: string;
 
-  @Column({ nullable: true })
-  profileImage: string;
+  @Column({ nullable: true, type: 'varchar' })
+  profileImage: string | null;
 
   @Column({ nullable: true })
   address: string;
@@ -50,6 +50,9 @@ export class User {
   @ManyToOne(() => Role)
   @JoinColumn()
   role: Role;
+
+  @Column({ nullable: true })
+  roleName: string;
 
   @Column({ default: 'active' })
   status: 'active' | 'inactive';
