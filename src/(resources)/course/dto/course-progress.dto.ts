@@ -66,19 +66,9 @@ export class DeviceInfoDto {
 }
 
 export class UpdateProgressDto {
-  @ApiProperty({
-    description: 'User ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsUUID()
   @IsOptional()
   userId?: string;
 
-  @ApiProperty({
-    description: 'Course ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsUUID()
   @IsNotEmpty()
   courseId: string;
 

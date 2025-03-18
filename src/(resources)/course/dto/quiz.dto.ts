@@ -81,13 +81,8 @@ export class CreateQuizDto {
   @IsNotEmpty()
   assessment: QuizQuestionDto[];
 
-  @ApiProperty({
-    description: 'Course ID to which the quiz belongs',
-    example: 'f3d7b7a3-7b3e-4c3b-8d0b-6b9e6f2b3b3a',
-  })
-  @IsString()
-  @IsNotEmpty()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
   @ApiProperty({
     description: 'Quiz duration in minutes',
@@ -97,13 +92,13 @@ export class CreateQuizDto {
   @IsNotEmpty()
   duration: number;
 
-  @ApiProperty({
-    description: 'Boolean to determine if quiz is published',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isPublished?: boolean;
+  // @ApiProperty({
+  //   description: 'Boolean to determine if quiz is published',
+  //   example: true,
+  // })
+  // @IsOptional()
+  // @IsBoolean()
+  // isPublished?: boolean;
 }
 
 export class UpdateQuizDto {
@@ -160,11 +155,11 @@ export class UpdateQuizDto {
   @IsNumber()
   duration?: number;
 
-  @ApiProperty({
-    description: 'Boolean to determine if quiz is published',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isPublished?: boolean;
+  // @ApiProperty({
+  //   description: 'Boolean to determine if quiz is published',
+  //   example: true,
+  // })
+  // @IsOptional()
+  // @IsBoolean()
+  // isPublished?: boolean;
 }

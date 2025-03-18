@@ -938,9 +938,20 @@ export class CourseService {
       throw new NotFoundException('Course not found');
     }
 
+    const assessmentData = createQuizDto.assessment.map((question) => ({
+      question: question.question,
+      options: [...question.options],
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation,
+    }));
+
     const quiz = this.quizRepository.create({
-      ...createQuizDto,
+      title: createQuizDto.title,
+      description: createQuizDto.description,
+      assessment: assessmentData,
+      duration: createQuizDto.duration,
       course,
+      courseId: course.id,
     });
 
     return await this.quizRepository.save(quiz);
@@ -973,7 +984,21 @@ export class CourseService {
       throw new NotFoundException('Quiz not found');
     }
 
-    Object.assign(quiz, updateQuizDto);
+    if (updateQuizDto.title) quiz.title = updateQuizDto.title;
+    if (updateQuizDto.description) quiz.description = updateQuizDto.description;
+    if (updateQuizDto.duration) quiz.duration = updateQuizDto.duration;
+
+    if (updateQuizDto.assessment && updateQuizDto.assessment.length > 0) {
+      const assessmentData = updateQuizDto.assessment.map((question) => ({
+        question: question.question,
+        options: [...question.options],
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+      }));
+
+      quiz.assessment = assessmentData;
+    }
+
     return await this.quizRepository.save(quiz);
   }
 
@@ -1164,11 +1189,10 @@ export class CourseService {
     // Get the user
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['studentProfile'],
     });
 
-    if (!user || !user.studentProfile) {
-      throw new NotFoundException('Student not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     // Process the submission and calculate the score
@@ -1189,6 +1213,7 @@ export class CourseService {
         questionId: quiz.assessment.indexOf(questionData).toString(),
         questionText: answer.questionText,
         selectedAnswer: answer.selectedAnswer,
+        correctAnswer: questionData.correctAnswer,
         isCorrect,
       };
     });

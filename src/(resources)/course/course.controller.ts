@@ -239,11 +239,24 @@ export class CourseController {
 
   @Post('update-progress')
   @ApiTags('Courses - Course Progress and Offline Access')
+  @ApiQuery({
+    name: 'courseId',
+    required: true,
+    type: String,
+    description: 'The ID of the course',
+  })
   @ApiOperation({
     summary:
       'Update course progress while the student is taking the course online',
   })
-  async updateProgress(@Body() updateProgressDto: UpdateProgressDto) {
+  async updateProgress(
+    @Body() updateProgressDto: UpdateProgressDto,
+    @Req() request: Request & { user: { id: string } },
+    @Param('courseId') courseId: string,
+  ) {
+    const userId = request.user.id;
+    updateProgressDto.userId = userId;
+    updateProgressDto.courseId = courseId;
     return await this.courseService.updateProgress(updateProgressDto);
   }
 
@@ -275,8 +288,12 @@ export class CourseController {
       'Sync offline progress when the student is watching a video offline and then comes back online',
   })
   async syncOfflineProgress(
+    @Param('courseId') courseId: string,
+    @Req() request: Request & { user: { id: string } },
     @Body() syncOfflineProgressDto: SyncOfflineProgressDto,
   ) {
+    syncOfflineProgressDto.courseId = courseId;
+    syncOfflineProgressDto.userId = request.user.id;
     return await this.courseService.syncOfflineProgress(syncOfflineProgressDto);
   }
 
@@ -305,7 +322,7 @@ export class CourseController {
   // Quiz Endpoints
   @Post(':courseId/quizzes')
   @UseGuards(RolesGuard)
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Create a quiz for a course' })
   async createQuiz(
@@ -354,7 +371,7 @@ export class CourseController {
   // Quiz Submission Endpoints
   @Post('quizzes/submit')
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('student')
+  @Roles('student', 'admin')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Submit a quiz answer' })
   async submitQuiz(
@@ -369,7 +386,7 @@ export class CourseController {
 
   @Get('student/quiz-submissions')
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('student')
+  @Roles('student', 'admin')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({
     summary: 'Get all quiz submissions for the logged-in student',
