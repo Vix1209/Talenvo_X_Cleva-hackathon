@@ -25,7 +25,7 @@ import {
 } from './dto/course-progress.dto';
 import { WebsocketService } from 'src/websockets/websockets.service';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, ResourceType } from 'utils/types';
+import { NotificationType } from 'utils/types';
 import { User } from '../users/entities/user.entity';
 import { CreateQuizDto, UpdateQuizDto } from './dto/quiz.dto';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
@@ -48,6 +48,7 @@ import {
 } from './dto/category.dto';
 import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
 import { paginate } from 'utils/pagination.utils';
+import { ResourceType } from 'utils/types';
 
 @Injectable()
 export class CourseService {
@@ -359,7 +360,6 @@ export class CourseService {
     const course = await this.findOne(id);
     await this.courseRepository.remove(course);
 
-    // Notify connected clients about the course deletion
     this.websocketService.emit('course-deleted', { courseId: id });
   }
 
@@ -372,46 +372,101 @@ export class CourseService {
       throw new BadRequestException('Course ID is required');
     }
 
-    if (
-      createDto.type === ResourceType.LINK ||
-      createDto.type === ResourceType.IMAGE ||
-      createDto.type === ResourceType.AUDIO ||
-      createDto.type === ResourceType.DOCUMENT ||
-      createDto.type === ResourceType.TEXT ||
-      createDto.type === ResourceType.VIDEO ||
-      createDto.type === ResourceType.PDF
-    ) {
-      if (!createDto.url) {
-        throw new BadRequestException('URL is required');
-      }
+    const existingcourse = await this.courseRepository.findOne({
+      where: { id: createDto.courseId },
+    });
+
+    if (!existingcourse) {
+      throw new NotFoundException(
+        `Course with ID ${createDto.courseId} not found`,
+      );
     }
 
-    const course = await this.findOne(createDto.courseId);
+    if (
+      [
+        ResourceType.LINK,
+        ResourceType.IMAGE,
+        ResourceType.AUDIO,
+        ResourceType.DOCUMENT,
+        ResourceType.TEXT,
+        ResourceType.VIDEO,
+        ResourceType.PDF,
+      ].includes(createDto.type as ResourceType) &&
+      !createDto.url
+    ) {
+      throw new BadRequestException(
+        `URL is required for ${createDto.type} resources`,
+      );
+    }
 
-    const resource = this.downloadableResourceRepository.create({
-      ...createDto,
-      name: createDto.name || '',
-      url: createDto.url || '',
-      type: createDto.type || '',
-      size: createDto.size || 0,
-      courseId: createDto.courseId,
-      lastModified: new Date(),
+    const course = await this.courseRepository.findOne({
+      where: { id: createDto.courseId },
     });
 
-    const savedResource =
-      await this.downloadableResourceRepository.save(resource);
+    if (!course) {
+      throw new NotFoundException(
+        `Course with ID ${createDto.courseId} not found`,
+      );
+    }
 
-    // Update course's offline accessibility
-    course.isOfflineAccessible = true;
-    await this.courseRepository.save(course);
+    // 4. Create resource entity
+    const resource = new DownloadableResource();
+    resource.name = createDto.name || '';
+    resource.url = createDto.url || '';
+    resource.type = createDto.type || '';
+    resource.size = createDto.size || 0;
+    resource.courseId = course.id;
+    resource.lastModified = new Date();
 
-    // Notify connected clients about the new resource
-    this.websocketService.emit('resource-added', {
-      courseId: course.id,
-      resourceId: savedResource.id,
+    try {
+      const savedResource =
+        await this.downloadableResourceRepository.save(resource);
+
+      if (!course.isOfflineAccessible) {
+        course.isOfflineAccessible = true;
+        await this.courseRepository.save(course);
+      }
+
+      this.websocketService.emit('resource-added', {
+        courseId: course.id,
+        resourceId: savedResource.id,
+      });
+
+      return savedResource;
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to create downloadable resource: ${error.message}`,
+      );
+    }
+  }
+
+  async getDownloadableResources(
+    courseId: string,
+  ): Promise<DownloadableResource[]> {
+    if (!courseId) {
+      throw new BadRequestException('Course ID is required');
+    }
+
+    // Verify the course exists
+    await this.findOne(courseId);
+
+    const resources = await this.downloadableResourceRepository.find({
+      where: { courseId },
+      relations: {
+        course: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
     });
 
-    return savedResource;
+    resources.forEach((resource) => {
+      if (!resource.courseId) {
+        resource.courseId = courseId;
+      }
+    });
+
+    return resources;
   }
 
   async updateDownloadableResource(
@@ -429,9 +484,17 @@ export class CourseService {
       );
     }
 
+    // Save the courseId before updating
+    const courseId = resource.courseId;
+
+    // Update only allowed fields from DTO
     Object.assign(resource, {
-      ...updateDto,
+      name: updateDto.name !== undefined ? updateDto.name : resource.name,
+      url: updateDto.url !== undefined ? updateDto.url : resource.url,
+      type: updateDto.type !== undefined ? updateDto.type : resource.type,
+      size: updateDto.size !== undefined ? updateDto.size : resource.size,
       lastModified: new Date(),
+      courseId: courseId,
     });
 
     const savedResource =
@@ -439,7 +502,7 @@ export class CourseService {
 
     // Notify connected clients about the resource update
     this.websocketService.emit('resource-updated', {
-      courseId: resource.courseId,
+      courseId: savedResource.courseId,
       resourceId: savedResource.id,
     });
 
@@ -458,23 +521,27 @@ export class CourseService {
       );
     }
 
-    await this.downloadableResourceRepository.remove(resource);
+    // Store courseId before removing the resource
+    const courseId = resource.courseId;
+
+    // Use delete instead of remove to avoid loading the entity again
+    await this.downloadableResourceRepository.delete(id);
 
     // Check if course still has any downloadable resources
     const remainingResources = await this.downloadableResourceRepository.count({
-      where: { courseId: resource.courseId },
+      where: { courseId },
     });
 
     // Update course's offline accessibility if no resources remain
     if (remainingResources === 0) {
-      const course = await this.findOne(resource.courseId);
+      const course = await this.findOne(courseId);
       course.isOfflineAccessible = false;
       await this.courseRepository.save(course);
     }
 
     // Notify connected clients about the resource deletion
     this.websocketService.emit('resource-deleted', {
-      courseId: resource.courseId,
+      courseId,
       resourceId: id,
     });
   }

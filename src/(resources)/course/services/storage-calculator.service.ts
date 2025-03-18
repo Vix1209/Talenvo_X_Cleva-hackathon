@@ -105,6 +105,8 @@ export class StorageCalculatorService {
         return total + Number(resource.size);
       }
 
+      if (!resource.type) return total;
+      
       const fileType = resource.type.toLowerCase();
       if (fileType.includes('video')) {
         return total + this.DEFAULT_RESOURCE_SIZES.video;

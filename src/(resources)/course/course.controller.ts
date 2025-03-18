@@ -209,6 +209,13 @@ export class CourseController {
     return await this.courseService.addDownloadableResource(createDto);
   }
 
+  @Get(':courseId/downloadable-resources')
+  @ApiTags('Courses - Downloadable Resources')
+  @ApiOperation({ summary: 'Get all downloadable resources for a course' })
+  async getDownloadableResources(@Param('courseId') courseId: string) {
+    return await this.courseService.getDownloadableResources(courseId);
+  }
+
   @Patch('downloadable-resources/:id')
   @Roles('teacher', 'admin')
   @ApiTags('Courses - Downloadable Resources')
