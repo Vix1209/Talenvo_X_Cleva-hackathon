@@ -46,6 +46,8 @@ import {
   UpdateCategoryDto,
   CategoryResponseDto,
 } from './dto/category.dto';
+import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
+import { paginate } from 'utils/pagination.utils';
 
 @Injectable()
 export class CourseService {
@@ -245,17 +247,68 @@ export class CourseService {
     }
   }
 
-  async findAll(): Promise<Course[]> {
-    return await this.courseRepository.find({
-      relations: [
-        'user',
-        'comments',
-        'quizzes',
-        'additionalResources',
+  async findAll(queryOptions: QueryCourseDto = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      categoryId,
+      sortBy = 'createdAt',
+      sortOrder = SortOrder.DESC,
+    } = queryOptions;
+
+    // Create query builder
+    const query = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect('course.user', 'user')
+      .leftJoinAndSelect('course.category', 'category')
+      .leftJoinAndSelect('course.comments', 'comments')
+      .leftJoinAndSelect('course.quizzes', 'quizzes')
+      .leftJoinAndSelect('course.additionalResources', 'additionalResources')
+      .leftJoinAndSelect(
+        'course.downloadableResources',
         'downloadableResources',
-        'category',
-      ],
-    });
+      );
+
+    // Apply search filter if provided
+    if (search) {
+      query.andWhere(
+        '(course.title LIKE :search OR course.description LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Apply category filter if provided
+    if (categoryId) {
+      query.andWhere('course.categoryId = :categoryId', { categoryId });
+    }
+
+    // Apply sorting
+    const validSortColumns = [
+      'title',
+      'createdAt',
+      'updatedAt',
+      'downloadCount',
+    ];
+
+    // Default to createdAt if sortBy is not valid
+    const actualSortBy = validSortColumns.includes(sortBy)
+      ? sortBy
+      : 'createdAt';
+    query.orderBy(`course.${actualSortBy}`, sortOrder);
+
+    // Execute query with pagination
+    const [results, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      ...paginate(results, limit ?? 10, page ?? 1, totalPages),
+    };
   }
 
   async findOne(id: string): Promise<Course> {

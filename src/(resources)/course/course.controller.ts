@@ -9,6 +9,7 @@ import {
   UseGuards,
   Req,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CourseService } from './course.service';
@@ -25,7 +26,12 @@ import {
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
-import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import {
@@ -41,6 +47,7 @@ import {
   UpdateCategoryDto,
   CategoryResponseDto,
 } from './dto/category.dto';
+import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
@@ -116,9 +123,50 @@ export class CourseController {
 
   @Get()
   @ApiTags('Course Management')
-  @ApiOperation({ summary: 'Get all courses' })
-  async findAll() {
-    return await this.courseService.findAll();
+  @ApiOperation({
+    summary: 'Get all courses with filtering, sorting, and pagination',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search courses by title or description',
+  })
+  @ApiQuery({
+    name: 'categoryId',
+    required: false,
+    type: String,
+    description: 'Filter courses by category ID',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description:
+      'Field to sort by (title, createdAt, updatedAt, downloadCount)',
+    enum: ['title', 'createdAt', 'updatedAt', 'downloadCount'],
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    type: String,
+    description: 'Sort order (ASC or DESC)',
+    enum: ['ASC', 'DESC'],
+  })
+  async findAll(@Query() queryOptions: QueryCourseDto) {
+    return await this.courseService.findAll(queryOptions);
   }
 
   @Get(':id')

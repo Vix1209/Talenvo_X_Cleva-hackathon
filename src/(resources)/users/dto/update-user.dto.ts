@@ -13,14 +13,6 @@ import {
 // ------------------ Student Profile DTOs ------------------ //
 export class CreateStudentProfileDto {
   @ApiPropertyOptional({
-    description: 'Profile picture URL',
-    example: 'https://example.com/images/profile.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
-  @ApiPropertyOptional({
     description: 'Student grade level',
     example: '10th Grade',
   })
@@ -44,18 +36,10 @@ export class CreateStudentProfileDto {
   @IsString()
   learningGoals?: string;
 
-  @ApiPropertyOptional({
-    description: 'Total lessons completed',
-    example: '42',
-  })
   @IsOptional()
   @IsString()
   totalLessonsCompleted?: string;
 
-  @ApiPropertyOptional({
-    description: 'Average quiz score',
-    example: '85%',
-  })
   @IsOptional()
   @IsString()
   averageQuizScore?: string;

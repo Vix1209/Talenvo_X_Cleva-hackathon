@@ -51,6 +51,9 @@ export class User {
   @JoinColumn()
   role: Role;
 
+  @Column({ nullable: true })
+  roleName: string;
+
   @Column({ default: 'active' })
   status: 'active' | 'inactive';
 

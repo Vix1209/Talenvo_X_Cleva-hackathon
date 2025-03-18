@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
       useFactory: async (config: ConfigService) => ({
         transport: `smtps://${config.get('MAIL_USER')}:${config.get('MAIL_PASSWORD')}@${config.get('MAIL_HOST')}`,
         defaults: {
-          from: `${config.get('MAIL_FROM')}`,
+          from: `Edulite <${config.get('MAIL_FROM')}>`,
         },
         template: {
           dir: join(`${__dirname}/../../mail`, 'templates'),

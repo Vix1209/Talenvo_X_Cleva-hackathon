@@ -139,6 +139,7 @@ export class UsersService {
     return { message: 'Password updated successfully' };
   }
 
+  // ------------------ Update Profile Image ------------------ //
   async updateProfileImage(id: string, file: Express.Multer.File) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
