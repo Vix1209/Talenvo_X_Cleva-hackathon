@@ -49,7 +49,7 @@ export function createTypeOrmConfig(configService: ConfigService): any {
         rejectUnauthorized: false,
       },
       autoLoadEntities: true,
-      synchronize: configService.get('MYSQL_SYNC') === 'true',
+      synchronize: false,
       driver: require('mysql2'),
     };
   }
