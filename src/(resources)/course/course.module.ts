@@ -1,38 +1,42 @@
 import { Module } from '@nestjs/common';
-import { CourseService } from './course.service';
-import { CourseController } from './course.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Comment } from './entities/comment.entity';
-import { Quiz } from './entities/quiz.entity';
-import { AdditionalResource } from './entities/additional_resource.entity';
-import { User } from '../users/entities/user.entity';
+import { CourseController } from './course.controller';
+import { CourseService } from './course.service';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import { DownloadableResource } from './entities/downloadable-resource.entity';
-import { WebsocketModule } from 'src/websockets/websockets.module';
-import { Role } from '../role/entities/role.entity';
-import { NotificationModule } from '../notification/notification.module';
-import { WebsocketService } from 'src/websockets/websockets.service';
-import { NotificationService } from '../notification/notification.service';
-import { StorageCalculatorService } from './services/storage-calculator.service';
-import { Notification } from '../notification/entities/notification.entity';
+import { User } from '../users/entities/user.entity';
+import { Category } from './entities/category.entity';
+import { Quiz } from './entities/quiz.entity';
+import { Comment } from './entities/comment.entity';
+import { AdditionalResource } from './entities/additional_resource.entity';
 import { QuizSubmission } from './entities/quiz-submission.entity';
 import { StudentProfile } from '../users/entities/user-profile.entity';
-import { Category } from './entities/category.entity';
+import { WebsocketModule } from 'src/websockets/websockets.module';
+import { NotificationModule } from '../notification/notification.module';
+import {
+  CategoryService,
+  DownloadableResourceService,
+  QuizService,
+  CommentService,
+  AdditionalResourceService,
+  CourseProgressService,
+  StorageCalculatorService,
+} from './services';
+import { Role } from '../role/entities/role.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Course,
       CourseProgress,
+      User,
       DownloadableResource,
       Quiz,
-      QuizSubmission,
       Comment,
       AdditionalResource,
-      User,
+      QuizSubmission,
       StudentProfile,
-      Notification,
       Role,
       Category,
     ]),
@@ -42,8 +46,12 @@ import { Category } from './entities/category.entity';
   controllers: [CourseController],
   providers: [
     CourseService,
-    WebsocketService,
-    NotificationService,
+    CategoryService,
+    DownloadableResourceService,
+    QuizService,
+    CommentService,
+    AdditionalResourceService,
+    CourseProgressService,
     StorageCalculatorService,
   ],
   exports: [CourseService],

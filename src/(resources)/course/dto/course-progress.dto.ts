@@ -65,6 +65,32 @@ export class DeviceInfoDto {
   os?: string;
 }
 
+export class ClientStorageInfoDto {
+  @ApiProperty({
+    description: 'Total storage used by the user in bytes',
+    example: 5120000,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  totalStorageUsed: number;
+
+  @ApiProperty({
+    description: 'Maximum storage allowed for the user in bytes',
+    example: 104857600,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  maxStorageAllowed: number;
+
+  @ApiProperty({
+    description: 'Whether the user has enough storage to download the course',
+    example: true,
+  })
+  @IsBoolean()
+  @IsNotEmpty()
+  hasEnoughStorage: boolean;
+}
+
 export class UpdateProgressDto {
   @IsOptional()
   userId?: string;
@@ -126,6 +152,21 @@ export class DownloadCourseDto {
   @ValidateNested()
   @Type(() => DeviceInfoDto)
   deviceInfo: DeviceInfoDto;
+
+  @ApiProperty({
+    description: 'Client storage information',
+    example: {
+      totalStorageUsed: 5120000,
+      maxStorageAllowed: 104857600,
+      hasEnoughStorage: true,
+    },
+    type: ClientStorageInfoDto,
+  })
+  @IsObject()
+  @ValidateNested()
+  @Type(() => ClientStorageInfoDto)
+  @IsOptional()
+  clientStorageInfo?: ClientStorageInfoDto;
 }
 
 export class SyncOfflineProgressDto extends UpdateProgressDto {
