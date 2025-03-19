@@ -608,12 +608,8 @@ $ npm run start:prod
 
 ---
 
-<p align="center">
+<p>
 Built with ❤️ by <a href="https://github.com/Vix1209">Uchenna Ofor</a> using <a href="https://nestjs.com/">NestJS</a>, a Node.js Framework.
 </p>
 
-<p align="center">
-
 [![API Docs](https://img.shields.io/badge/Swagger-API_Documentation-85EA2D?style=for-the-badge&logo=swagger)](https://edulite-talenvo.onrender.com/api)
-
-</p>
