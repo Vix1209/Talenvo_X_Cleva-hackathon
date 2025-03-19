@@ -262,7 +262,11 @@ export class CourseController {
 
   @Post('download')
   @ApiTags('Courses - Course Progress and Offline Access')
-  @ApiOperation({ summary: 'Download a course for offline access' })
+  @ApiOperation({
+    summary: 'Download a course for offline access',
+    description:
+      'Downloads a course for offline access. The client can provide storage information to validate if there is enough space available for the download.',
+  })
   async downloadCourse(
     @Body() downloadCourseDto: DownloadCourseDto,
     @Req() request: Request & { user: { id: string } },
@@ -277,8 +281,42 @@ export class CourseController {
   @ApiOperation({
     summary: 'Estimate the size of a course for storage planning',
   })
-  async estimateCourseSize(@Param('courseId') courseId: string) {
-    return await this.courseService.estimateCourseSize(courseId);
+  @ApiQuery({
+    name: 'totalStorageUsed',
+    required: false,
+    type: Number,
+    description: 'Current total storage used by the client in bytes',
+  })
+  @ApiQuery({
+    name: 'maxStorageAllowed',
+    required: false,
+    type: Number,
+    description: 'Maximum storage allowed for the client in bytes',
+  })
+  async estimateCourseSize(
+    @Param('courseId') courseId: string,
+    @Query('totalStorageUsed') totalStorageUsed?: number,
+    @Query('maxStorageAllowed') maxStorageAllowed?: number,
+  ) {
+    const storageInfo = await this.courseService.estimateCourseSize(courseId);
+
+    // Update with client-provided storage information if available
+    if (totalStorageUsed !== undefined) {
+      storageInfo.totalStorageUsed = Number(totalStorageUsed);
+    }
+
+    if (maxStorageAllowed !== undefined) {
+      storageInfo.maxStorageAllowed = Number(maxStorageAllowed);
+    }
+
+    // Determine if enough storage is available
+    if (storageInfo.totalStorageUsed > 0 && storageInfo.maxStorageAllowed > 0) {
+      storageInfo.hasEnoughStorage =
+        storageInfo.totalStorageUsed + storageInfo.estimatedSize <=
+        storageInfo.maxStorageAllowed;
+    }
+
+    return storageInfo;
   }
 
   @Post('sync-offline-progress')
