@@ -1,10 +1,6 @@
 # Edulite - Educational Platform with Offline Learning Support
 
-<p align="center">
-  <img src="https://via.placeholder.com/200x200?text=Edulite" width="200" alt="Edulite Logo" />
-</p>
-
-<p align="center">A modern educational platform built with NestJS that supports offline learning, progress tracking, and real-time updates.</p>
+<p>A modern educational platform built with NestJS that supports offline learning, progress tracking, and real-time updates.</p>
 
 ## Table of Contents
 
