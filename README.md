@@ -20,10 +20,10 @@
   - [Learning Flow (Online)](#learning-flow-online)
   - [Offline Access Flow](#offline-access-flow)
   - [Real-time Update Flow](#real-time-update-flow)
-  <!-- - [Frontend Implementation](#frontend-implementation)
+- [Frontend Implementation](#frontend-implementation)
   - [Offline Storage](#offline-storage)
   - [Progress Tracking](#progress-tracking-1)
-  - [Synchronization](#synchronization) -->
+  - [Synchronization](#synchronization)
 - [Setup and Installation](#setup-and-installation)
 - [Development](#development)
 - [Testing](#testing)
@@ -53,7 +53,8 @@ Edulite is an educational platform designed to provide seamless learning experie
 
 ## API Documentation
 
-### Course Management
+<details>
+<summary><strong>Course Management</strong></summary>
 
 #### Create Course
 
@@ -91,8 +92,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Access**: Teachers only
 - **Purpose**: Deletes a course
 - **Response**: No content (204)
+</details>
 
-### Downloadable Resources
+<details>
+<summary><strong>Downloadable Resources</strong></summary>
 
 #### Add Downloadable Resource
 
@@ -116,8 +119,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Access**: Teachers only
 - **Purpose**: Removes a downloadable resource
 - **Response**: No content (204)
+</details>
 
-### Progress Tracking
+<details>
+<summary><strong>Progress Tracking</strong></summary>
 
 #### Update Progress
 
@@ -140,8 +145,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Access**: Authenticated user (own progress) or admin
 - **Purpose**: Retrieves a student's progress for a specific course
 - **Response**: Progress object for the specified course
+</details>
 
-### Offline Access
+<details>
+<summary><strong>Offline Access</strong></summary>
 
 #### Download Course
 
@@ -158,8 +165,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Purpose**: Synchronizes progress made while offline back to the server
 - **Request Body**: `SyncOfflineProgressDto` (userId, courseId, progressPercentage, isCompleted, lastPosition, deviceInfo, lastModifiedOffline)
 - **Response**: Updated progress object
+</details>
 
-### Authentication
+<details>
+<summary><strong>Authentication</strong></summary>
 
 #### Register User
 
@@ -192,8 +201,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Purpose**: Request password reset
 - **Request Body**: `ResetPasswordDto` (email)
 - **Response**: Success message
+</details>
 
-### User Management
+<details>
+<summary><strong>User Management</strong></summary>
 
 #### Get User Profile
 
@@ -209,8 +220,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Purpose**: Update user profile information
 - **Request Body**: `UpdateUserDto` (partial user properties)
 - **Response**: Updated user object
+</details>
 
-### Category Management
+<details>
+<summary><strong>Category Management</strong></summary>
 
 #### Create Category
 
@@ -241,8 +254,10 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Access**: Teachers and admins
 - **Purpose**: Delete a category
 - **Response**: No content (204)
+</details>
 
-### Quiz Management
+<details>
+<summary><strong>Quiz Management</strong></summary>
 
 #### Create Quiz
 
@@ -259,6 +274,19 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Purpose**: Submit answers for a quiz
 - **Request Body**: `SubmitQuizDto` (answers)
 - **Response**: Quiz submission result
+</details>
+
+<!-- <details>
+<summary><strong>File Upload</strong></summary>
+
+#### Upload Course Image
+
+- **Endpoint**: `POST /upload/course-image`
+- **Access**: Teachers and admins
+- **Purpose**: Upload an image for a course
+- **Request Body**: Form data with image file
+- **Response**: Uploaded image URL
+</details> -->
 
 ## System Flows
 
@@ -329,6 +357,30 @@ Change occurs (new resource, progress update) → WebSocket notification → Con
 4. Clients update their UI or data accordingly
 5. This ensures a consistent experience across devices
 
+<!-- ### Email Notification Flow
+
+```
+User Action → Email Service → Template Selection → Email Delivery
+```
+
+1. User performs an action (registration, password reset, etc.)
+2. System triggers appropriate email notification
+3. Email service selects the correct template
+4. System sends personalized email to user
+5. User receives notification with relevant information
+
+### File Upload Flow
+
+```
+File Selection → Validation → Cloudinary Upload → URL Storage
+```
+
+1. User selects a file for upload
+2. System validates file type and size
+3. File is uploaded to Cloudinary
+4. System stores the returned URL
+5. URL is associated with the relevant entity -->
+
 ### Category Management Flow
 
 ```
@@ -341,7 +393,7 @@ Category Creation → Course Association → Category Updates → Course Reorgan
 4. Course organization is maintained
 5. Users can filter courses by category
 
-<!-- ## Frontend Implementation
+## Frontend Implementation
 
 ### Offline Storage
 
@@ -447,7 +499,56 @@ async function syncOfflineData() {
     }
   }
 }
-``` -->
+```
+
+## Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+# Environment
+NODE_ENV=development
+
+# Database
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DATABASE=
+MYSQL_SYNC=false
+MYSQL_CLOUD_DB_URL=
+
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION=24h
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Email
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USER=your_email
+MAIL_PASSWORD=your_password
+MAIL_FROM=noreply@edulite.com
+
+# SMS notification using Twilio
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# Frontend
+FRONTEND_URL=http://localhost:3000
+
+# Swagger config
+PORT=5000
+API_VERSION=1
+APP_NAME='Talenvo Hackathon'
+APP_DESCRIPTION='Talenvo Hackathon API'
+
+```
 
 ## Setup and Installation
 
@@ -507,4 +608,16 @@ $ npm run start:prod
 
 ---
 
-Built with ❤️ by [Uchenna Ofor](https://github.com/Vix1209) using [NestJS](https://nestjs.com/), a Node.js Framework
+<p align="center">
+Built with ❤️ by <a href="https://github.com/Vix1209">Uchenna Ofor</a> using <a href="https://nestjs.com/">NestJS</a>, a Node.js Framework.
+</p>
+
+<p align="center">
+  <a href="https://edulite-talenvo.onrender.com/api">
+    <img src="https://static1.smartbear.co/swagger/media/assets/swagger_logo.svg" alt="Swagger Logo" width="50">
+    <br>
+    <span style="background-color: #85EA2D; color: #000; padding: 5px 10px; border-radius: 4px; font-weight: bold;">Interactive API Documentation</span>
+  </a>
+</p>
+
+[![API Docs](https://img.shields.io/badge/Swagger-API_Documentation-85EA2D?style=for-the-badge&logo=swagger)](https://edulite-talenvo.onrender.com/api)
