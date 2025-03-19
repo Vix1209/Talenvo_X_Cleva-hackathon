@@ -35,7 +35,7 @@ export function createTypeOrmConfig(configService: ConfigService): any {
     };
   } else {
     // Production configuration using Cloud Mysql database
-    const dbUrl = configService.get('DB_URL');
+    const dbUrl = configService.get('MYSQL_CLOUD_DB_URL');
 
     if (!dbUrl) {
       throw new Error('Database URL is not defined in environment variables');

@@ -43,6 +43,13 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Real-time Updates**: Receive notifications about course changes via WebSockets
 - **Device Awareness**: Track and manage content across multiple devices
 - **Role-Based Access**: Separate teacher and student permissions
+- **Email Notifications**: Automated email communications for user events
+- **File Upload**: Secure file uploads with Cloudinary integration
+- **Storage Management**: Client-side storage validation and management
+- **Category Management**: Organize courses by categories
+- **Quiz System**: Interactive quizzes with submission tracking
+- **Comment System**: Course-specific discussions and feedback
+- **Additional Resources**: Supplementary materials for courses
 
 ## API Documentation
 
@@ -152,6 +159,117 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Request Body**: `SyncOfflineProgressDto` (userId, courseId, progressPercentage, isCompleted, lastPosition, deviceInfo, lastModifiedOffline)
 - **Response**: Updated progress object
 
+### Authentication
+
+#### Register User
+
+- **Endpoint**: `POST /auth/register`
+- **Access**: Public
+- **Purpose**: Register a new user
+- **Request Body**: `RegisterDto` (firstName, lastName, email, password, role)
+- **Response**: Created user object with verification token
+
+#### Login User
+
+- **Endpoint**: `POST /auth/login`
+- **Access**: Public
+- **Purpose**: Authenticate user and get access token
+- **Request Body**: `LoginDto` (email, password)
+- **Response**: JWT token and user information
+
+#### Verify Email
+
+- **Endpoint**: `GET /auth/verify-email`
+- **Access**: Public
+- **Purpose**: Verify user's email address
+- **Query Parameters**: token, email
+- **Response**: Success message
+
+#### Reset Password
+
+- **Endpoint**: `POST /auth/reset-password`
+- **Access**: Public
+- **Purpose**: Request password reset
+- **Request Body**: `ResetPasswordDto` (email)
+- **Response**: Success message
+
+### User Management
+
+#### Get User Profile
+
+- **Endpoint**: `GET /users/profile`
+- **Access**: Authenticated users
+- **Purpose**: Get current user's profile
+- **Response**: User profile object
+
+#### Update User Profile
+
+- **Endpoint**: `PATCH /users/profile`
+- **Access**: Authenticated users
+- **Purpose**: Update user profile information
+- **Request Body**: `UpdateUserDto` (partial user properties)
+- **Response**: Updated user object
+
+### Category Management
+
+#### Create Category
+
+- **Endpoint**: `POST /courses/categories`
+- **Access**: Teachers and admins
+- **Purpose**: Create a new course category
+- **Request Body**: `CreateCategoryDto` (name, description)
+- **Response**: Created category object
+
+#### Get Categories
+
+- **Endpoint**: `GET /courses/categories`
+- **Access**: All authenticated users
+- **Purpose**: Get all course categories
+- **Response**: Array of category objects
+
+#### Update Category
+
+- **Endpoint**: `PATCH /courses/categories/:id`
+- **Access**: Teachers and admins
+- **Purpose**: Update category information
+- **Request Body**: `UpdateCategoryDto` (partial category properties)
+- **Response**: Updated category object
+
+#### Delete Category
+
+- **Endpoint**: `DELETE /courses/categories/:id`
+- **Access**: Teachers and admins
+- **Purpose**: Delete a category
+- **Response**: No content (204)
+
+### Quiz Management
+
+#### Create Quiz
+
+- **Endpoint**: `POST /courses/:courseId/quizzes`
+- **Access**: Teachers and admins
+- **Purpose**: Create a new quiz for a course
+- **Request Body**: `CreateQuizDto` (title, questions, duration)
+- **Response**: Created quiz object
+
+#### Submit Quiz
+
+- **Endpoint**: `POST /courses/quizzes/:quizId/submit`
+- **Access**: All authenticated users
+- **Purpose**: Submit answers for a quiz
+- **Request Body**: `SubmitQuizDto` (answers)
+- **Response**: Quiz submission result
+
+### File Upload
+
+#### Upload Course Image
+
+- **Endpoint**: `POST /upload/course-image`
+- **Access**: Teachers and admins
+- **Purpose**: Upload an image for a course
+- **Request Body**: Form data with image file
+- **Response**: Uploaded image URL
+
 ## System Flows
 
 ### Content Creation Flow
@@ -220,6 +338,42 @@ Change occurs (new resource, progress update) → WebSocket notification → Con
 3. Connected clients receive notifications
 4. Clients update their UI or data accordingly
 5. This ensures a consistent experience across devices
+
+### Email Notification Flow
+
+```
+User Action → Email Service → Template Selection → Email Delivery
+```
+
+1. User performs an action (registration, password reset, etc.)
+2. System triggers appropriate email notification
+3. Email service selects the correct template
+4. System sends personalized email to user
+5. User receives notification with relevant information
+
+### File Upload Flow
+
+```
+File Selection → Validation → Cloudinary Upload → URL Storage
+```
+
+1. User selects a file for upload
+2. System validates file type and size
+3. File is uploaded to Cloudinary
+4. System stores the returned URL
+5. URL is associated with the relevant entity
+
+### Category Management Flow
+
+```
+Category Creation → Course Association → Category Updates → Course Reorganization
+```
+
+1. Admin/Teacher creates a category
+2. Courses are assigned to categories
+3. Categories can be updated or deleted
+4. Course organization is maintained
+5. Users can filter courses by category
 
 ## Frontend Implementation
 
@@ -329,11 +483,96 @@ async function syncOfflineData() {
 }
 ```
 
+### Email Templates
+
+The system uses HTML templates for email communications:
+
+```html
+<!-- Example email template structure -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Email-specific styles */
+    </style>
+  </head>
+  <body>
+    <!-- Dynamic content placeholders -->
+    <h1>Welcome {{name}}!</h1>
+    <p>{{content}}</p>
+  </body>
+</html>
+```
+
+### File Upload Handling
+
+Frontend handles file uploads with progress tracking:
+
+```javascript
+// Handle file upload
+async function uploadFile(file, type) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch(`/api/upload/${type}`, {
+      method: 'POST',
+      body: formData,
+      onUploadProgress: (progressEvent) => {
+        const progress = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total,
+        );
+        updateProgressBar(progress);
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+
+    const { url } = await response.json();
+    return url;
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
+}
+```
+
+### Category Management UI
+
+Frontend implements category management features:
+
+```javascript
+// Category management functions
+async function createCategory(categoryData) {
+  const response = await fetch('/api/courses/categories', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(categoryData),
+  });
+  return response.json();
+}
+
+async function updateCategory(categoryId, updates) {
+  const response = await fetch(`/api/courses/categories/${categoryId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  });
+  return response.json();
+}
+```
+
 ## Setup and Installation
 
 ```bash
 # Clone the repository
-$ git clone https://github.com/Vix1209/Edulite-hackathon.git
+$ git clone https://github.com/Vix1209/Talenvo_X_Cleva-hackathon.git
 
 # Install dependencies
 $ npm install
