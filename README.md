@@ -20,10 +20,10 @@
   - [Learning Flow (Online)](#learning-flow-online)
   - [Offline Access Flow](#offline-access-flow)
   - [Real-time Update Flow](#real-time-update-flow)
-- [Frontend Implementation](#frontend-implementation)
+<!-- - [Frontend Implementation](#frontend-implementation)
   - [Offline Storage](#offline-storage)
   - [Progress Tracking](#progress-tracking-1)
-  - [Synchronization](#synchronization)
+  - [Synchronization](#synchronization) -->
 - [Setup and Installation](#setup-and-installation)
 - [Development](#development)
 - [Testing](#testing)
@@ -276,18 +276,6 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Response**: Quiz submission result
 </details>
 
-<!-- <details>
-<summary><strong>File Upload</strong></summary>
-
-#### Upload Course Image
-
-- **Endpoint**: `POST /upload/course-image`
-- **Access**: Teachers and admins
-- **Purpose**: Upload an image for a course
-- **Request Body**: Form data with image file
-- **Response**: Uploaded image URL
-</details> -->
-
 ## System Flows
 
 ### Content Creation Flow
@@ -357,29 +345,6 @@ Change occurs (new resource, progress update) → WebSocket notification → Con
 4. Clients update their UI or data accordingly
 5. This ensures a consistent experience across devices
 
-<!-- ### Email Notification Flow
-
-```
-User Action → Email Service → Template Selection → Email Delivery
-```
-
-1. User performs an action (registration, password reset, etc.)
-2. System triggers appropriate email notification
-3. Email service selects the correct template
-4. System sends personalized email to user
-5. User receives notification with relevant information
-
-### File Upload Flow
-
-```
-File Selection → Validation → Cloudinary Upload → URL Storage
-```
-
-1. User selects a file for upload
-2. System validates file type and size
-3. File is uploaded to Cloudinary
-4. System stores the returned URL
-5. URL is associated with the relevant entity -->
 
 ### Category Management Flow
 
