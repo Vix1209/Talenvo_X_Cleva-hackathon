@@ -105,17 +105,6 @@ export class AuthController {
     };
   }
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth() {}
-
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Req() req, @Res() res) {
-    const jwt = await this.authService.generateJwtToken(req.user);
-    res.redirect(`${process.env.FRONTEND_URL}?token=${jwt}`);
-  }
-
   @Post('verify')
   @ApiOperation({ summary: 'Verify email token' })
   async verifyEmail(

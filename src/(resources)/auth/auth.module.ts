@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
-// import { GoogleStrategy } from './strategy/google.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/(resources)/users/entities/user.entity';
 import { Role } from 'src/(resources)/role/entities/role.entity';
@@ -51,7 +50,6 @@ import { NotificationModule } from '../notification/notification.module';
     JwtStrategy,
     CloudinaryUploadService,
     RolesGuard,
-    // GoogleStrategy
   ],
   exports: [AuthService, RolesGuard],
 })

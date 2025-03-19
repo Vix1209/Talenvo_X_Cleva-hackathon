@@ -10,7 +10,6 @@ import { CourseProgress } from '../entities/course-progress.entity';
 import { Course } from '../entities/course.entity';
 import { User } from '../../users/entities/user.entity';
 import {
-  DeviceInfoDto,
   DownloadCourseDto,
   SyncOfflineProgressDto,
   UpdateProgressDto,
