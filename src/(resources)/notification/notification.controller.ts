@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiExcludeController,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -24,16 +25,17 @@ import { JwtGuard } from '../auth/guard/jwt.guard';
 @Controller('notifications')
 @UseGuards(JwtGuard)
 @ApiBearerAuth()
+@ApiExcludeController()
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Create a new notification' })
-  async create(
-    @Body() createNotificationDto: CreateNotificationDto,
-  ): Promise<Notification> {
-    return await this.notificationService.create(createNotificationDto);
-  }
+  // @Post()
+  // @ApiOperation({ summary: 'Create a new notification' })
+  // async create(
+  //   @Body() createNotificationDto: CreateNotificationDto,
+  // ): Promise<Notification> {
+  //   return await this.notificationService.create(createNotificationDto);
+  // }
 
   @Get()
   @ApiOperation({ summary: 'Get all notifications for the authenticated user' })

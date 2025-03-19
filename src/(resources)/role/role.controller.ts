@@ -13,13 +13,19 @@ import {
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiExcludeController,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
 
 @GlobalApiResponse()
+@ApiExcludeController()
 @Controller({ path: 'admin/role', version: '1' })
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
