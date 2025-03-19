@@ -393,7 +393,7 @@ Category Creation → Course Association → Category Updates → Course Reorgan
 4. Course organization is maintained
 5. Users can filter courses by category
 
-## Frontend Implementation
+<!-- ## Frontend Implementation
 
 ### Offline Storage
 
@@ -499,7 +499,7 @@ async function syncOfflineData() {
     }
   }
 }
-```
+``` -->
 
 ## Environment Variables
 
