@@ -20,10 +20,10 @@
   - [Learning Flow (Online)](#learning-flow-online)
   - [Offline Access Flow](#offline-access-flow)
   - [Real-time Update Flow](#real-time-update-flow)
-- [Frontend Implementation](#frontend-implementation)
+  <!-- - [Frontend Implementation](#frontend-implementation)
   - [Offline Storage](#offline-storage)
   - [Progress Tracking](#progress-tracking-1)
-  - [Synchronization](#synchronization)
+  - [Synchronization](#synchronization) -->
 - [Setup and Installation](#setup-and-installation)
 - [Development](#development)
 - [Testing](#testing)
@@ -260,16 +260,6 @@ Edulite is an educational platform designed to provide seamless learning experie
 - **Request Body**: `SubmitQuizDto` (answers)
 - **Response**: Quiz submission result
 
-### File Upload
-
-#### Upload Course Image
-
-- **Endpoint**: `POST /upload/course-image`
-- **Access**: Teachers and admins
-- **Purpose**: Upload an image for a course
-- **Request Body**: Form data with image file
-- **Response**: Uploaded image URL
-
 ## System Flows
 
 ### Content Creation Flow
@@ -339,30 +329,6 @@ Change occurs (new resource, progress update) → WebSocket notification → Con
 4. Clients update their UI or data accordingly
 5. This ensures a consistent experience across devices
 
-### Email Notification Flow
-
-```
-User Action → Email Service → Template Selection → Email Delivery
-```
-
-1. User performs an action (registration, password reset, etc.)
-2. System triggers appropriate email notification
-3. Email service selects the correct template
-4. System sends personalized email to user
-5. User receives notification with relevant information
-
-### File Upload Flow
-
-```
-File Selection → Validation → Cloudinary Upload → URL Storage
-```
-
-1. User selects a file for upload
-2. System validates file type and size
-3. File is uploaded to Cloudinary
-4. System stores the returned URL
-5. URL is associated with the relevant entity
-
 ### Category Management Flow
 
 ```
@@ -375,7 +341,7 @@ Category Creation → Course Association → Category Updates → Course Reorgan
 4. Course organization is maintained
 5. Users can filter courses by category
 
-## Frontend Implementation
+<!-- ## Frontend Implementation
 
 ### Offline Storage
 
@@ -481,92 +447,7 @@ async function syncOfflineData() {
     }
   }
 }
-```
-
-### Email Templates
-
-The system uses HTML templates for email communications:
-
-```html
-<!-- Example email template structure -->
-<!DOCTYPE html>
-<html>
-  <head>
-    <style>
-      /* Email-specific styles */
-    </style>
-  </head>
-  <body>
-    <!-- Dynamic content placeholders -->
-    <h1>Welcome {{name}}!</h1>
-    <p>{{content}}</p>
-  </body>
-</html>
-```
-
-### File Upload Handling
-
-Frontend handles file uploads with progress tracking:
-
-```javascript
-// Handle file upload
-async function uploadFile(file, type) {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  try {
-    const response = await fetch(`/api/upload/${type}`, {
-      method: 'POST',
-      body: formData,
-      onUploadProgress: (progressEvent) => {
-        const progress = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total,
-        );
-        updateProgressBar(progress);
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    const { url } = await response.json();
-    return url;
-  } catch (error) {
-    console.error('Upload error:', error);
-    throw error;
-  }
-}
-```
-
-### Category Management UI
-
-Frontend implements category management features:
-
-```javascript
-// Category management functions
-async function createCategory(categoryData) {
-  const response = await fetch('/api/courses/categories', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(categoryData),
-  });
-  return response.json();
-}
-
-async function updateCategory(categoryId, updates) {
-  const response = await fetch(`/api/courses/categories/${categoryId}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(updates),
-  });
-  return response.json();
-}
-```
+``` -->
 
 ## Setup and Installation
 
