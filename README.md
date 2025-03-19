@@ -466,55 +466,6 @@ async function syncOfflineData() {
 }
 ``` -->
 
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-# Environment
-NODE_ENV=development
-
-# Database
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=
-MYSQL_DATABASE=
-MYSQL_SYNC=false
-MYSQL_CLOUD_DB_URL=
-
-# JWT
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRATION=24h
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Email
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USER=your_email
-MAIL_PASSWORD=your_password
-MAIL_FROM=noreply@edulite.com
-
-# SMS notification using Twilio
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=
-
-# Frontend
-FRONTEND_URL=http://localhost:3000
-
-# Swagger config
-PORT=5000
-API_VERSION=1
-APP_NAME='Talenvo Hackathon'
-APP_DESCRIPTION='Talenvo Hackathon API'
-
-```
-
 ## Setup and Installation
 
 ```bash
