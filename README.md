@@ -613,11 +613,7 @@ Built with ❤️ by <a href="https://github.com/Vix1209">Uchenna Ofor</a> using
 </p>
 
 <p align="center">
-  <a href="https://edulite-talenvo.onrender.com/api">
-    <img src="https://static1.smartbear.co/swagger/media/assets/swagger_logo.svg" alt="Swagger Logo" width="50">
-    <br>
-    <span style="background-color: #85EA2D; color: #000; padding: 5px 10px; border-radius: 4px; font-weight: bold;">Interactive API Documentation</span>
-  </a>
-</p>
 
 [![API Docs](https://img.shields.io/badge/Swagger-API_Documentation-85EA2D?style=for-the-badge&logo=swagger)](https://edulite-talenvo.onrender.com/api)
+
+</p>
