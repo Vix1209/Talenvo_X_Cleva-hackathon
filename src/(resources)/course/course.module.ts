@@ -24,6 +24,7 @@ import {
   StorageCalculatorService,
 } from './services';
 import { Role } from '../role/entities/role.entity';
+import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.service';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { Role } from '../role/entities/role.entity';
     AdditionalResourceService,
     CourseProgressService,
     StorageCalculatorService,
+    CloudinaryUploadService,
   ],
   exports: [CourseService],
 })

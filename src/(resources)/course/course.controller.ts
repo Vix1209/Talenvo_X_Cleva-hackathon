@@ -10,8 +10,14 @@ import {
   Req,
   UnauthorizedException,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -31,6 +37,8 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
@@ -48,12 +56,16 @@ import {
   CategoryResponseDto,
 } from './dto/category.dto';
 import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
+import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.service';
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
 @ApiBearerAuth('JWT')
 export class CourseController {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(
+    private readonly courseService: CourseService,
+    private readonly cloudinaryService: CloudinaryUploadService,
+  ) {}
 
   // Category Endpoints ---------------------------------------------------------------------
 
@@ -112,12 +124,71 @@ export class CourseController {
   @ApiTags('Course Management')
   @Roles('teacher', 'admin')
   @ApiOperation({ summary: 'Create a new course' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        video: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Course video file (mp4, mov, avi, webm). Maximum size: 2GB',
+          example: 'video.mp4',
+        },
+        title: {
+          type: 'string',
+          description: 'Title of the course',
+          example: 'Introduction to Programming',
+        },
+        description: {
+          type: 'string',
+          description: 'Description of the course',
+          example:
+            'Learn the basics of programming with this comprehensive course.',
+        },
+        topics: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          description: 'Topics covered in the course',
+          example: ['Programming Basics', 'Variables', 'Control Structures'],
+        },
+        duration: {
+          type: 'string',
+          description: 'Duration of the course',
+          example: '100',
+        },
+        categoryId: {
+          type: 'string',
+          description: 'Category ID of the course',
+          example: 'f3d7b7a3-7b3e-4c3b-8d0b-6b9e6f2b3b3a',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('video'))
   async create(
     @Body() createCourseDto: CreateCourseDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 * 1024 }), // 2GB
+          new FileTypeValidator({ fileType: /(mp4|mov|avi|webm)$/i }),
+        ],
+      }),
+    )
+    video: Express.Multer.File,
     @Req() request: Request & { user: { id: string } },
   ) {
     const user = request.user.id;
     createCourseDto.userId = user;
+
+    // Upload video to Cloudinary
+    const videoUrl = await this.cloudinaryService.uploadVideo(video, 'courses');
+    createCourseDto.videoUrl = videoUrl;
+
     return await this.courseService.createCourse(createCourseDto);
   }
 
