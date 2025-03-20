@@ -56,7 +56,14 @@ import {
 import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
 import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
 import { S3Service } from '../../fileUpload/aws/s3.service';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
+import * as path from 'path';
+import * as fs from 'fs';
+
+const uploadPath = path.join(process.cwd(), 'temp-uploads');
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
@@ -130,9 +137,16 @@ export class CourseController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('video', {
-      storage: memoryStorage(),
+      storage: diskStorage({
+        destination: uploadPath,
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}-${file.originalname.replace(/\s+/g, '-')}`);
+        },
+      }),
       limits: {
-        fileSize: 5 * 1024 * 1024 * 1024, // 5GB for video
+        fileSize: 1024 * 1024 * 500, // 500mb for video
       },
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
@@ -220,12 +234,15 @@ export class CourseController {
       }
 
       // Upload video to S3
-      const videoUrl = await this.s3Service.uploadVideo(video, 'course-videos');
+      const videoUrl = await this.s3Service.uploadVideo(video);
 
       createCourseDto.videoUrl = videoUrl;
       return this.courseService.createCourse(createCourseDto);
     } catch (error) {
-      throw new BadRequestException(error.message);
+      if (video.path && fs.existsSync(video.path)) {
+        fs.unlinkSync(video.path);
+      }
+      throw error;
     }
   }
 
