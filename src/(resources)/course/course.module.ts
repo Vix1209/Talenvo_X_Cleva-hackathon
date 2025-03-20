@@ -24,7 +24,9 @@ import {
   StorageCalculatorService,
 } from './services';
 import { Role } from '../role/entities/role.entity';
-import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.service';
+import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
+import { S3Service } from '../../fileUpload/aws/s3.service';
+import { AwsModule } from '../../fileUpload/aws/aws.module';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.servi
     ]),
     WebsocketModule,
     NotificationModule,
+    AwsModule,
   ],
   controllers: [CourseController],
   providers: [
@@ -55,6 +58,7 @@ import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.servi
     CourseProgressService,
     StorageCalculatorService,
     CloudinaryUploadService,
+    S3Service,
   ],
   exports: [CourseService],
 })

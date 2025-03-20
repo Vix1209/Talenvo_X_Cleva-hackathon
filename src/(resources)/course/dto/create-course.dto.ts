@@ -25,19 +25,13 @@ export class CreateCourseDto {
   @IsNotEmpty()
   description: string;
 
-  @ApiProperty({
-    description: 'URL of the course video',
-    example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-  })
-  @IsString()
-  @IsNotEmpty()
-  videoUrl: string;
+  @IsOptional()
+  videoUrl?: string;
 
   @ApiProperty({
     description: 'Topics covered in the course',
     example: ['Topic 1', 'Topic 2', 'Topic 3'],
   })
-  @IsArray()
   @IsString({ each: true })
   topics: string[];
 

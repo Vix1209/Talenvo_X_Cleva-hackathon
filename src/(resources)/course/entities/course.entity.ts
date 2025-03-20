@@ -26,7 +26,7 @@ export class Course {
   @Column()
   description: string;
 
-  @Column()
+  @Column({ type: 'text' })
   videoUrl: string;
 
   @Column({ type: 'json' })

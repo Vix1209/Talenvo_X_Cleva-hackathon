@@ -3,9 +3,14 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { RoleService } from './(resources)/role/role.service';
+import * as bodyParser from 'body-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['error', 'warn', 'debug', 'log'],
+    rawBody: true,
+  });
 
   //Swagger documentation
   const swaggerConfig = new DocumentBuilder()
@@ -72,6 +77,44 @@ async function bootstrap() {
     },
   });
 
+  // Set up versioning
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
+  // Raw body parser for webhook verification
+  app.use(
+    bodyParser.json({
+      limit: '50mb',
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
+  app.use(
+    bodyParser.urlencoded({
+      limit: '50mb',
+      extended: true,
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
+  // Increase the timeout for the server
+  app.use(
+    (
+      req: any,
+      res: { setTimeout: (arg0: number) => void },
+      next: () => void,
+    ) => {
+      res.setTimeout(15 * 60 * 1000); // 15 minutes timeout
+      next();
+    },
+  );
+
   // Enable CORS with open configuration
   app.enableCors({
     origin: '*',
@@ -89,9 +132,6 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('/api/');
-  app.enableVersioning({
-    type: VersioningType.URI,
-  });
 
   try {
     SwaggerModule.setup('/api', app, document, {

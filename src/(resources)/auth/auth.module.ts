@@ -11,7 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 
-import { CloudinaryUploadService } from 'src/cloudinary/cloudinaryUpload.service';
+import { CloudinaryUploadService } from 'src/fileUpload/cloudinary/cloudinaryUpload.service';
 import {
   AdminProfile,
   StudentProfile,

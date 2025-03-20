@@ -11,7 +11,7 @@ import { paginate } from 'utils/pagination.utils';
 import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
 import { compare, hash } from 'bcrypt';
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryUploadService } from 'src/cloudinary/cloudinaryUpload.service';
+import { CloudinaryUploadService } from 'src/fileUpload/cloudinary/cloudinaryUpload.service';
 import { Role } from '../role/entities/role.entity';
 
 @Injectable()

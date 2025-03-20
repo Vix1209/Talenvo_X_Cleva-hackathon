@@ -12,7 +12,7 @@ import {
 import { Comment } from '../course/entities/comment.entity';
 import { AdditionalResource } from '../course/entities/additional_resource.entity';
 import { Quiz } from '../course/entities/quiz.entity';
-import { CloudinaryModule } from 'src/cloudinary/cloudinaryUpload.module';
+import { CloudinaryModule } from 'src/fileUpload/cloudinary/cloudinaryUpload.module';
 
 @Module({
   imports: [

@@ -12,9 +12,7 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -56,7 +54,9 @@ import {
   CategoryResponseDto,
 } from './dto/category.dto';
 import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
-import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.service';
+import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
+import { S3Service } from '../../fileUpload/aws/s3.service';
+import { memoryStorage } from 'multer';
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
@@ -64,7 +64,8 @@ import { CloudinaryUploadService } from '../../cloudinary/cloudinaryUpload.servi
 export class CourseController {
   constructor(
     private readonly courseService: CourseService,
-    private readonly cloudinaryService: CloudinaryUploadService,
+    private readonly cloudinaryUploadService: CloudinaryUploadService,
+    private readonly s3Service: S3Service,
   ) {}
 
   // Category Endpoints ---------------------------------------------------------------------
@@ -122,9 +123,40 @@ export class CourseController {
 
   @Post()
   @ApiTags('Course Management')
+  @UseGuards(JwtGuard, RolesGuard)
+  @ApiBearerAuth('JWT')
   @Roles('teacher', 'admin')
   @ApiOperation({ summary: 'Create a new course' })
   @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('video', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024 * 1024, // 5GB for video
+      },
+      fileFilter: (req, file, cb) => {
+        const allowedMimeTypes = [
+          'video/mp4',
+          'video/quicktime',
+          'video/x-msvideo',
+          'video/webm',
+          'video/x-matroska',
+        ];
+
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          cb(
+            new BadRequestException(
+              'Invalid file type. Only video files are allowed.',
+            ),
+            false,
+          );
+          return;
+        }
+
+        cb(null, true);
+      },
+    }),
+  )
   @ApiBody({
     schema: {
       type: 'object',
@@ -133,7 +165,7 @@ export class CourseController {
           type: 'string',
           format: 'binary',
           description:
-            'Course video file (mp4, mov, avi, webm). Maximum size: 2GB',
+            'Course video file (mp4, mov, avi, webm, mkv). Maximum size: 5GB',
           example: 'video.mp4',
         },
         title: {
@@ -166,30 +198,35 @@ export class CourseController {
           example: 'f3d7b7a3-7b3e-4c3b-8d0b-6b9e6f2b3b3a',
         },
       },
+      required: ['title', 'description', 'categoryId', 'video'],
     },
   })
-  @UseInterceptors(FileInterceptor('video'))
   async create(
     @Body() createCourseDto: CreateCourseDto,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 * 1024 }), // 2GB
-          new FileTypeValidator({ fileType: /(mp4|mov|avi|webm)$/i }),
-        ],
-      }),
-    )
-    video: Express.Multer.File,
+    @UploadedFile() video: Express.Multer.File,
     @Req() request: Request & { user: { id: string } },
   ) {
-    const user = request.user.id;
-    createCourseDto.userId = user;
+    if (!video) {
+      throw new BadRequestException('Video file is required');
+    }
 
-    // Upload video to Cloudinary
-    const videoUrl = await this.cloudinaryService.uploadVideo(video, 'courses');
-    createCourseDto.videoUrl = videoUrl;
+    try {
+      createCourseDto.userId = request.user.id;
 
-    return await this.courseService.createCourse(createCourseDto);
+      if (Array.isArray(createCourseDto.topics)) {
+        createCourseDto.topics;
+      } else {
+        createCourseDto.topics = [createCourseDto.topics];
+      }
+
+      // Upload video to S3
+      const videoUrl = await this.s3Service.uploadVideo(video, 'course-videos');
+
+      createCourseDto.videoUrl = videoUrl;
+      return this.courseService.createCourse(createCourseDto);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   @Get()
