@@ -21,7 +21,50 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  // Create Swagger document with custom options to prevent duplicate tags
+  const document = SwaggerModule.createDocument(app, swaggerConfig, {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+    ignoreGlobalPrefix: false,
+  });
+
+  // Post-process the document to remove duplicate controller tags
+  const tagNames = new Set();
+  if (document.tags) {
+    // Keep only unique tags
+    document.tags = document.tags.filter((tag) => {
+      if (tagNames.has(tag.name)) {
+        return false;
+      }
+      tagNames.add(tag.name);
+      return true;
+    });
+  }
+
+  // Process paths to ensure operations only use ApiTags and not controller names
+  for (const path in document.paths) {
+    for (const method in document.paths[path]) {
+      const operation = document.paths[path][method];
+
+      // If using ApiTags (which adds tags), remove any controller-name-based tags
+      if (operation.tags && operation.tags.length > 0) {
+        // Check if there's a custom tag that matches ApiTags
+        const hasApiTags = operation.tags.some(
+          (tag: string | string[]) =>
+            tag.includes('Course Management') ||
+            tag.includes('Course Categories') ||
+            tag.includes('Courses -'),
+        );
+
+        // If using ApiTags, remove the controller-name tag
+        if (hasApiTags) {
+          operation.tags = operation.tags.filter(
+            (tag: string) => tag !== 'Course' && tag !== 'CourseController',
+          );
+        }
+      }
+    }
+  }
+
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
       tagsSorter: 'alpha',
