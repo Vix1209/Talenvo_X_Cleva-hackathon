@@ -319,7 +319,7 @@
     </div>
     <p>
       This link will expire in
-      <strong>one hour</strong>. If you didn’t request a password reset, you can
+      <strong>one hour</strong>. If you didn't request a password reset, you can
       safely ignore this email.
     </p>
 
@@ -457,4 +457,174 @@
     </p>
   </div>
 
+{{/if}}
+
+{{#if sendNotification}}
+  <html>
+    <head>
+      <title>{{title}}</title>
+      <style>
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          font-family: Arial, sans-serif;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+          text-align: center;
+          padding: 20px;
+          background: linear-gradient(135deg, #3c53c7 0%, #5c72e8 100%);
+          color: white;
+          border-radius: 8px 8px 0 0;
+          margin: -20px -20px 20px -20px;
+        }
+        .content {
+          padding: 20px 0;
+          line-height: 1.6;
+          color: #444;
+        }
+        .footer {
+          text-align: center;
+          padding-top: 20px;
+          margin-top: 20px;
+          border-top: 1px solid #eee;
+          color: #777;
+          font-size: 0.9em;
+        }
+        .button {
+          display: inline-block;
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #3c53c7 0%, #5c72e8 100%);
+          color: white;
+          text-decoration: none;
+          border-radius: 4px;
+          margin: 20px 0;
+          font-weight: bold;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .info-box {
+          background-color: #f7f9ff;
+          border-left: 4px solid #3c53c7;
+          padding: 15px;
+          margin: 20px 0;
+          border-radius: 0 4px 4px 0;
+        }
+        .metadata {
+          background-color: #f5f5f5;
+          padding: 12px;
+          border-radius: 4px;
+          margin-top: 20px;
+          font-size: 0.9em;
+        }
+        .metadata-item {
+          margin-bottom: 5px;
+        }
+        .social-links {
+          margin-top: 20px;
+          text-align: center;
+        }
+        .social-links a {
+          margin: 0 10px;
+          display: inline-block;
+        }
+        .social-icon {
+          width: 30px;
+          height: 30px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class='container'>
+        <div class='header'>
+          <h1>{{title}}</h1>
+        </div>
+        <div class='content'>
+          <p>Dear {{name}},</p>
+
+          <div class='info-box'>
+            {{content}}
+          </div>
+
+          {{#if metadata}}
+            {{#if metadata.courseId}}
+              <div class='metadata'>
+                <h3>Additional Information</h3>
+                {{#if metadata.courseName}}
+                  <div class='metadata-item'><strong>Course:</strong>
+                    {{metadata.courseName}}</div>
+                {{/if}}
+                {{#if metadata.completedAt}}
+                  <div class='metadata-item'><strong>Completed:</strong>
+                    {{metadata.completedAt}}</div>
+                {{/if}}
+                {{#if metadata.progress}}
+                  <div class='metadata-item'><strong>Progress:</strong>
+                    {{metadata.progress}}%</div>
+                {{/if}}
+                {{#if metadata.downloadedAt}}
+                  <div class='metadata-item'><strong>Downloaded:</strong>
+                    {{metadata.downloadedAt}}</div>
+                {{/if}}
+                {{#if metadata.estimatedSize}}
+                  <div class='metadata-item'><strong>Size:</strong>
+                    {{metadata.estimatedSize}}</div>
+                {{/if}}
+              </div>
+            {{/if}}
+
+            {{#if metadata.actionUrl}}
+              <div style='text-align: center; margin: 25px 0;'>
+                <a href='{{metadata.actionUrl}}' class='button'>
+                  {{#if metadata.actionText}}
+                    {{metadata.actionText}}
+                  {{else}}
+                    View Details
+                  {{/if}}
+                </a>
+              </div>
+            {{/if}}
+          {{/if}}
+
+          <p>If you have any questions, feel free to contact our support team.</p>
+
+          <p>Best regards,<br />The Edulite Team</p>
+        </div>
+
+        <div class='footer'>
+          <p>© {{now}} Edulite. All rights reserved.</p>
+          <div class='social-links'>
+            <a href='https://twitter.com/Edulite'>
+              <img
+                src='https://img.icons8.com/color/30/000000/twitter.png'
+                alt='Twitter'
+                class='social-icon'
+              />
+            </a>
+            <a href='https://facebook.com/Edulite'>
+              <img
+                src='https://img.icons8.com/color/30/000000/facebook.png'
+                alt='Facebook'
+                class='social-icon'
+              />
+            </a>
+            <a href='https://instagram.com/Edulite'>
+              <img
+                src='https://img.icons8.com/color/30/000000/instagram-new.png'
+                alt='Instagram'
+                class='social-icon'
+              />
+            </a>
+          </div>
+        </div>
+      </div>
+    </body>
+  </html>
 {{/if}}

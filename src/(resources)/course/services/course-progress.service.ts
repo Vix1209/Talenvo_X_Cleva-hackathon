@@ -90,10 +90,10 @@ export class CourseProgressService {
       }
       await this.notificationService.create({
         recipientId: userId,
-        type: NotificationType.SMS,
+        type: NotificationType.EMAIL,
         title: 'Course Completed! 🎉',
         content: `Congratulations ${user.firstName}! You've completed the course "${course.title}". Keep up the great work!`,
-        phoneNumber: user.phoneNumber,
+        // phoneNumber: user.phoneNumber,
         metadata: {
           courseId: course.id,
           courseName: course.title,
@@ -121,10 +121,10 @@ export class CourseProgressService {
       }
       await this.notificationService.create({
         recipientId: userId,
-        type: NotificationType.SMS,
+        type: NotificationType.EMAIL,
         title: `Course Progress: ${milestone}! 🎯`,
         content: `Great progress, ${user.firstName}! You're ${milestone} through "${course.title}". Keep going!`,
-        phoneNumber: user.phoneNumber,
+        // phoneNumber: user.phoneNumber,
         metadata: {
           courseId: course.id,
           courseName: course.title,
@@ -258,10 +258,10 @@ export class CourseProgressService {
       }
       await this.notificationService.create({
         recipientId: userId,
-        type: NotificationType.SMS,
+        type: NotificationType.EMAIL,
         title: 'Course Downloaded Successfully',
         content: `Hi ${user.firstName}, "${course.title}" has been downloaded for offline access. You can now learn even without an internet connection!`,
-        phoneNumber: user.phoneNumber,
+        // phoneNumber: user.phoneNumber,
         metadata: {
           courseId: course.id,
           courseName: course.title,
@@ -391,10 +391,10 @@ export class CourseProgressService {
     }
     await this.notificationService.create({
       recipientId: userId,
-      type: NotificationType.SMS,
+      type: NotificationType.EMAIL,
       title: 'Course Progress Synced',
       content: `Hi ${user.firstName}, your progress for "${course.title}" has been successfully synced. You're at ${progressPercentage}% completion.`,
-      phoneNumber: user.phoneNumber,
+      // phoneNumber: user.phoneNumber,
       metadata: {
         courseId: course.id,
         courseName: course.title,

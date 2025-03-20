@@ -7,6 +7,7 @@ import { Notification } from './entities/notification.entity';
 import { NotificationStatus, NotificationType } from 'utils/types';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { User } from '../users/entities/user.entity';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class NotificationService {
@@ -19,6 +20,7 @@ export class NotificationService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private configService: ConfigService,
+    private mailService: MailService,
   ) {
     // Initialize Twilio client
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
@@ -67,6 +69,60 @@ export class NotificationService {
     }
   }
 
+  private async sendEmail(notification: Notification): Promise<void> {
+    try {
+      const recipient = await this.userRepository.findOne({
+        where: { id: notification.recipientId },
+        relations: ['role'],
+      });
+
+      if (!recipient) {
+        throw new Error('Recipient not found for email notification');
+      }
+
+      if (!recipient.email) {
+        throw new Error('Email address is required for email notifications');
+      }
+
+      // We'll use a custom email method for notifications
+      // Create a custom notification email using the existing methods in MailService
+      await this.mailService.sendCustomNotification(
+        recipient.email,
+        notification.title,
+        notification.content,
+        recipient,
+        notification.metadata,
+      );
+
+      // Update notification status
+      notification.status = NotificationStatus.SENT;
+      notification.sentAt = new Date();
+      notification.metadata = {
+        ...notification.metadata,
+        emailSentTo: recipient.email,
+      };
+
+      await this.notificationRepository.save(notification);
+
+      this.logger.log(
+        `Email notification sent successfully to ${recipient.email}`,
+      );
+    } catch (error) {
+      notification.status = NotificationStatus.FAILED;
+      notification.metadata = {
+        ...notification.metadata,
+        error: error.message,
+      };
+      await this.notificationRepository.save(notification);
+
+      this.logger.error(
+        `Failed to send email notification: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
   async create(
     createNotificationDto: CreateNotificationDto,
   ): Promise<Notification> {
@@ -87,8 +143,23 @@ export class NotificationService {
     const savedNotification =
       await this.notificationRepository.save(notification);
 
-    if (notification.type === NotificationType.SMS) {
-      await this.sendSMS(savedNotification);
+    // Handle different notification types
+    switch (notification.type) {
+      case NotificationType.SMS:
+        await this.sendSMS(savedNotification);
+        break;
+      case NotificationType.EMAIL:
+        await this.sendEmail(savedNotification);
+        break;
+      case NotificationType.SYSTEM:
+        // System notifications don't require immediate action
+        // They're just stored in the database for display in the UI
+        notification.status = NotificationStatus.SENT;
+        notification.sentAt = new Date();
+        await this.notificationRepository.save(notification);
+        break;
+      default:
+        this.logger.warn(`Unknown notification type: ${notification.type}`);
     }
 
     return savedNotification;

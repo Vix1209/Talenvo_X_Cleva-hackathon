@@ -31,7 +31,7 @@ import {
 import { CreateAdminDto } from './dto/create-account.dto';
 import { ResetTokenDto } from './dto/reset-token.dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from 'utils/types';
+// import { NotificationType } from 'utils/types';
 
 @Injectable()
 export class AuthService {
@@ -139,13 +139,13 @@ export class AuthService {
     await this.mailService.sendUserConfirmation(newAccount, token, true);
 
     // Send welcome notification
-    await this.notificationService.create({
-      recipientId: newAccount.id,
-      type: NotificationType.SMS,
-      title: 'Welcome to Talenvo!',
-      content: `Welcome ${newAccount.firstName}! Your student account has been created successfully. Your student ID is ${studentProfile.studentId}. Please verify your email to get started.`,
-      phoneNumber: newAccount.phoneNumber,
-    });
+    // await this.notificationService.create({
+    //   recipientId: newAccount.id,
+    //   type: NotificationType.SMS,
+    //   title: 'Welcome to Talenvo!',
+    //   content: `Welcome ${newAccount.firstName}! Your student account has been created successfully. Your student ID is ${studentProfile.studentId}. Please verify your email to get started.`,
+    //   phoneNumber: newAccount.phoneNumber,
+    // });
 
     const { password, verificationToken, ...result } = newAccount;
     return result;
@@ -196,13 +196,13 @@ export class AuthService {
     await this.mailService.sendUserConfirmation(newAccount, token, true);
 
     // Send welcome notification
-    await this.notificationService.create({
-      recipientId: newAccount.id,
-      type: NotificationType.SMS,
-      title: 'Welcome to Talenvo!',
-      content: `Welcome ${newAccount.firstName}! Your teacher account has been created successfully. Your teacher ID is ${teacherProfile.teacherId}. Please verify your email to start creating courses.`,
-      phoneNumber: newAccount.phoneNumber,
-    });
+    // await this.notificationService.create({
+    //   recipientId: newAccount.id,
+    //   type: NotificationType.SMS,
+    //   title: 'Welcome to Talenvo!',
+    //   content: `Welcome ${newAccount.firstName}! Your teacher account has been created successfully. Your teacher ID is ${teacherProfile.teacherId}. Please verify your email to start creating courses.`,
+    //   phoneNumber: newAccount.phoneNumber,
+    // });
 
     const { password, verificationToken, ...result } = newAccount;
     return result;
@@ -247,13 +247,13 @@ export class AuthService {
     await this.mailService.sendUserConfirmation(newAccount, token, true);
 
     // Send welcome notification
-    await this.notificationService.create({
-      recipientId: newAccount.id,
-      type: NotificationType.SMS,
-      title: 'Welcome to Talenvo!',
-      content: `Welcome ${newAccount.firstName}! Your admin account has been created successfully. Your admin ID is ${adminProfile.adminId}. Please verify your email to access the admin dashboard.`,
-      phoneNumber: newAccount.phoneNumber,
-    });
+    // await this.notificationService.create({
+    //   recipientId: newAccount.id,
+    //   type: NotificationType.SMS,
+    //   title: 'Welcome to Talenvo!',
+    //   content: `Welcome ${newAccount.firstName}! Your admin account has been created successfully. Your admin ID is ${adminProfile.adminId}. Please verify your email to access the admin dashboard.`,
+    //   phoneNumber: newAccount.phoneNumber,
+    // });
 
     const { password, verificationToken, ...result } = newAccount;
     return result;

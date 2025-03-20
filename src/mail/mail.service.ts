@@ -1,6 +1,7 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { User } from 'src/(resources)/users/entities/user.entity';
+import { EmailNotificationMetadata } from 'utils/types';
 
 @Injectable()
 export class MailService {
@@ -90,6 +91,52 @@ export class MailService {
         name: `${user.firstName} ${user.lastName}`,
         loginUrl: `${process.env.FRONTEND_URL}/login`,
         sendResetMail: isVerified,
+      },
+    };
+
+    await this.mailerService.sendMail(mailOptions);
+  }
+
+  /**
+   * Send a custom email notification to a user
+   *
+   * @param email - Recipient's email address
+   * @param subject - Email subject (used as title in template)
+   * @param content - Main content of the notification (supports HTML)
+   * @param user - User entity for personalization
+   * @param metadata - Optional metadata for enhanced notifications
+   *
+   * Supported metadata properties:
+   * - courseId: Course identifier
+   * - courseName: Name of the course
+   * - completedAt: When course was completed
+   * - progress: Course progress percentage
+   * - downloadedAt: When course was downloaded
+   * - estimatedSize: Course size (formatted)
+   * - actionUrl: URL for action button
+   * - actionText: Text for action button
+   */
+  async sendCustomNotification(
+    email: string,
+    subject: string,
+    content: string,
+    user: User,
+    metadata?: EmailNotificationMetadata,
+  ) {
+    // Calculate current year for footer copyright
+    const now = new Date().getFullYear();
+
+    const mailOptions = {
+      to: email,
+      subject: subject,
+      template: './html_templates',
+      context: {
+        name: `${user.firstName} ${user.lastName}`,
+        title: subject, // Use subject as the title in the template
+        content: content,
+        metadata: metadata || {},
+        now: now, // For copyright year in footer
+        sendNotification: true,
       },
     };
 
