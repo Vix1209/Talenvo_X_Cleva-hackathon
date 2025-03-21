@@ -60,6 +60,7 @@ import { diskStorage, memoryStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 import { VideoUploadResult } from 'utils/types';
+import { WebsocketService } from 'src/websockets/websockets.service';
 
 const uploadPath = path.join(process.cwd(), 'temp-uploads');
 if (!fs.existsSync(uploadPath)) {
@@ -72,7 +73,7 @@ if (!fs.existsSync(uploadPath)) {
 export class CourseController {
   constructor(
     private readonly courseService: CourseService,
-    private readonly cloudinaryUploadService: CloudinaryUploadService,
+    private readonly websocketService: WebsocketService,
     private readonly s3Service: S3Service,
   ) {}
 
@@ -165,6 +166,50 @@ export class CourseController {
       },
     }),
   )
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        video: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Course video file (mp4, mov, avi, webm, mkv). Maximum size: 5GB',
+          example: 'video.mp4',
+        },
+        title: {
+          type: 'string',
+          description: 'Title of the course',
+          example: 'Introduction to Programming',
+        },
+        description: {
+          type: 'string',
+          description: 'Description of the course',
+          example:
+            'Learn the basics of programming with this comprehensive course.',
+        },
+        topics: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          description: 'Topics covered in the course',
+          example: ['Programming Basics', 'Variables', 'Control Structures'],
+        },
+        duration: {
+          type: 'string',
+          description: 'Duration of the course',
+          example: '100',
+        },
+        categoryId: {
+          type: 'string',
+          description: 'Category ID of the course',
+          example: 'f3d7b7a3-7b3e-4c3b-8d0b-6b9e6f2b3b3a',
+        },
+      },
+      required: ['title', 'description', 'categoryId', 'video'],
+    },
+  })
   async create(
     @Body() createCourseDto: CreateCourseDto,
     @UploadedFile() video: Express.Multer.File,
@@ -175,6 +220,10 @@ export class CourseController {
     }
 
     try {
+      // Generate a temporary ID for tracking this upload
+      const uploadId = Date.now().toString();
+      console.log(`Starting video upload process (ID: ${uploadId})`);
+
       createCourseDto.userId = request.user.id;
 
       if (Array.isArray(createCourseDto.topics)) {
@@ -183,58 +232,73 @@ export class CourseController {
         createCourseDto.topics = [createCourseDto.topics];
       }
 
-      // let videoResult;
+      // Initial upload notification
+      this.websocketService.emit('course-upload-progress', {
+        uploadId,
+        userId: request.user.id,
+        progress: 0,
+        status: 'started',
+        courseTitle: createCourseDto.title,
+      });
 
-      // console.log(
-      //   `Processing video: ${video.size} bytes, type: ${video.mimetype}`,
-      // );
+      // Define progress callback function
+      const progressCallback = (progress: number) => {
+        console.log(
+          `Upload progress for "${createCourseDto.title}": ${progress}%`,
+        );
 
-      // Choose the upload method based on file size
-      // if (video.size < 50 * 1024 * 1024) {
-      //   // 50MB threshold for server streaming upload
-      //   console.log('Using chunked streaming upload for smaller file');
-      //   videoResult = await this.cloudinaryUploadService.uploadVideo(
-      //     video,
-      //     'edulite-courses',
-      //     {
-      //       title: createCourseDto.title,
-      //       description: createCourseDto.description,
-      //       tags: createCourseDto.topics,
-      //       adaptive_streaming: true,
-      //     },
-      //   );
-      // } else {
-      //   console.log('Using direct upload for larger file');
-      //   // For larger files, use direct upload from backend to Cloudinary
-      //   videoResult = await this.cloudinaryUploadService.directUploadVideo(
-      //     video,
-      //     'edulite-courses',
-      //     {
-      //       title: createCourseDto.title,
-      //       description: createCourseDto.description,
-      //       tags: createCourseDto.topics,
-      //       adaptive_streaming: true,
-      //     },
-      //   );
-      // }
-
-      // console.log('Video upload completed, URL:', videoResult.secure_url);
-
-      // Set video URLs in the course DTO
-      // createCourseDto.videoUrl = videoResult.secure_url;
-
-      // Create and return the course
-      // return this.courseService.createCourse(createCourseDto);
-
-      //  ----------------------------------------------------------------
+        // Emit progress updates via websocket
+        this.websocketService.emit('course-upload-progress', {
+          uploadId,
+          userId: request.user.id,
+          progress,
+          status: progress < 100 ? 'uploading' : 'processing',
+          courseTitle: createCourseDto.title,
+        });
+      };
 
       // Upload video to S3
       const videoUrl = await this.s3Service.uploadVideo(video);
       console.log('Video upload completed, URL:', videoUrl);
-      // createCourseDto.videoUrl = videoUrl;
-      // return this.courseService.createCourse(createCourseDto);
+
+      // Notify that we're now creating the course
+      this.websocketService.emit('course-upload-progress', {
+        uploadId,
+        userId: request.user.id,
+        progress: 100,
+        status: 'saving',
+        courseTitle: createCourseDto.title,
+      });
+
+      // Create the course in the database
+      createCourseDto.videoUrl = videoUrl;
+      const course = await this.courseService.createCourse(createCourseDto);
+
+      // Final notification that course is created
+      this.websocketService.emit('course-upload-progress', {
+        uploadId,
+        userId: request.user.id,
+        progress: 100,
+        status: 'completed',
+        courseTitle: createCourseDto.title,
+        courseId: course.id,
+      });
+
+      // Broadcast to anyone interested that a new course was added
+      this.websocketService.emit('course-updated', { courseId: course.id });
+
+      return course;
     } catch (error) {
       console.error('Course creation error:', error);
+
+      // Error notification
+      this.websocketService.emit('course-upload-progress', {
+        userId: request.user.id,
+        progress: 0,
+        status: 'failed',
+        error: error.message || 'Upload failed',
+      });
+
       if (video.path && fs.existsSync(video.path)) {
         fs.unlinkSync(video.path);
       }
