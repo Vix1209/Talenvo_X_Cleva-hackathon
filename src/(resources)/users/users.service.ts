@@ -20,7 +20,6 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
     private readonly cloudinaryUploadService: CloudinaryUploadService,
   ) {}
 

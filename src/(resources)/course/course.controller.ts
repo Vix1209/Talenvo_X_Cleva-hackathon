@@ -40,10 +40,6 @@ import {
 } from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
-import {
-  CreateDownloadableResourceDto,
-  UpdateDownloadableResourceDto,
-} from './dto/downloadable-resource.dto';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -53,14 +49,11 @@ import {
   UpdateCategoryDto,
   CategoryResponseDto,
 } from './dto/category.dto';
-import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
-import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
+import { QueryCourseDto } from './dto/query-course.dto';
 import { S3Service } from '../../fileUpload/aws/s3.service';
-import { diskStorage, memoryStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
-import { VideoUploadResult } from 'utils/types';
-import { WebsocketService } from 'src/websockets/websockets.service';
 
 const uploadPath = path.join(process.cwd(), 'temp-uploads');
 if (!fs.existsSync(uploadPath)) {
@@ -71,11 +64,7 @@ if (!fs.existsSync(uploadPath)) {
 @UseGuards(JwtGuard, RolesGuard)
 @ApiBearerAuth('JWT')
 export class CourseController {
-  constructor(
-    private readonly courseService: CourseService,
-    private readonly websocketService: WebsocketService,
-    private readonly s3Service: S3Service,
-  ) {}
+  constructor(private readonly courseService: CourseService) {}
 
   // Category Endpoints ---------------------------------------------------------------------
 
@@ -215,104 +204,12 @@ export class CourseController {
     @UploadedFile() video: Express.Multer.File,
     @Req() request: Request & { user: { id: string } },
   ) {
-    if (!video) {
-      throw new BadRequestException('Video file is required');
-    }
-
-    try {
-      // Generate a temporary ID for tracking this upload
-      const uploadId = Date.now().toString();
-      console.log(`Starting video upload process (ID: ${uploadId})`);
-
-      createCourseDto.userId = request.user.id;
-
-      if (Array.isArray(createCourseDto.topics)) {
-        createCourseDto.topics;
-      } else {
-        createCourseDto.topics = [createCourseDto.topics];
-      }
-
-      // Initial upload notification
-      this.websocketService.emit('course-upload-progress', {
-        uploadId,
-        userId: request.user.id,
-        progress: 0,
-        status: 'started',
-        courseTitle: createCourseDto.title,
-      });
-
-      // Define progress callback function
-      const progressCallback = (progress: number) => {
-        // Emit progress updates via websocket
-        this.websocketService.emit('course-upload-progress', {
-          uploadId,
-          userId: request.user.id,
-          progress,
-          status: progress < 100 ? 'uploading' : 'processing',
-          courseTitle: createCourseDto.title,
-        });
-      };
-
-      // Upload video to S3 and get CloudFront URLs
-      const { s3Url, cloudfrontUrl, cloudfrontStreamingUrl, key } =
-        await this.s3Service.uploadVideo(video, progressCallback);
-
-      console.log('Video upload completed:');
-      console.log('- S3 URL:', s3Url);
-      console.log('- CloudFront URL:', cloudfrontUrl);
-      console.log('- CloudFront Streaming URL:', cloudfrontStreamingUrl);
-
-      // Notify that we're now creating the course
-      this.websocketService.emit('course-upload-progress', {
-        uploadId,
-        userId: request.user.id,
-        progress: 100,
-        status: 'saving',
-        courseTitle: createCourseDto.title,
-      });
-
-      // Create the course in the database with all URLs
-      createCourseDto.videoUrl = cloudfrontStreamingUrl; // Primary URL for streaming
-      createCourseDto.s3VideoUrl = s3Url;
-      createCourseDto.cloudfrontUrl = cloudfrontUrl;
-      createCourseDto.cloudfrontStreamingUrl = cloudfrontStreamingUrl;
-      createCourseDto.videoKey = key;
-
-      // Generate a thumbnail URL (this would typically be done by a video processing service)
-      // For now, we'll just set it to the CloudFront URL with a timestamp to force a frame grab
-      createCourseDto.videoThumbnailUrl = `${cloudfrontUrl}#t=5`; // Grab frame at 5 seconds
-
-      const course = await this.courseService.createCourse(createCourseDto);
-      // Final notification that course is created
-      this.websocketService.emit('course-upload-progress', {
-        uploadId,
-        userId: request.user.id,
-        progress: 100,
-        status: 'completed',
-        courseTitle: createCourseDto.title,
-        courseId: course.id,
-      });
-
-      // Broadcast to anyone interested that a new course was added
-      this.websocketService.emit('course-updated', { courseId: course.id });
-
-      return course;
-    } catch (error) {
-      console.error('Course creation error:', error);
-
-      // Error notification
-      this.websocketService.emit('course-upload-progress', {
-        userId: request.user.id,
-        progress: 0,
-        status: 'failed',
-        error: error.message || 'Upload failed',
-      });
-
-      if (video.path && fs.existsSync(video.path)) {
-        fs.unlinkSync(video.path);
-      }
-      throw error;
-    }
+    const userId = request.user.id;
+    return await this.courseService.createCourse(
+      createCourseDto,
+      video,
+      userId,
+    );
   }
 
   @Get()
@@ -391,42 +288,16 @@ export class CourseController {
 
   // Downloadable Resource Endpoints ---------------------------------------------------------------------------------------------------------------------------------------
 
-  @Post(':courseId/downloadable-resources')
+  @Post(':courseId/toggle-download-state')
   @Roles('teacher', 'admin')
   @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Add a downloadable resource to a course' })
-  async addDownloadableResource(
-    @Param('courseId') courseId: string,
-    @Body() createDto: CreateDownloadableResourceDto,
-  ) {
-    createDto.courseId = courseId;
-    return await this.courseService.addDownloadableResource(createDto);
-  }
-
-  @Get(':courseId/downloadable-resources')
-  @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Get all downloadable resources for a course' })
-  async getDownloadableResources(@Param('courseId') courseId: string) {
-    return await this.courseService.getDownloadableResources(courseId);
-  }
-
-  @Patch('downloadable-resources/:id')
-  @Roles('teacher', 'admin')
-  @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Update a downloadable resource' })
-  async updateDownloadableResource(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateDownloadableResourceDto,
-  ) {
-    return await this.courseService.updateDownloadableResource(id, updateDto);
-  }
-
-  @Delete('downloadable-resources/:id')
-  @Roles('teacher', 'admin')
-  @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Delete a downloadable resource' })
-  async removeDownloadableResource(@Param('id') id: string) {
-    return await this.courseService.removeDownloadableResource(id);
+  @ApiOperation({ summary: 'Make course downloadable or not' })
+  async toggleCourseDownloadStatus(@Param('courseId') courseId: string) {
+    const data = await this.courseService.toggleCourseDownloadStatus(courseId);
+    return {
+      data,
+      status: 'success',
+    };
   }
 
   // Course Progress and Offline Access Endpoints

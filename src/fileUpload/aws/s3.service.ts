@@ -150,7 +150,6 @@ export class S3Service {
     mimeType: string,
     progressCallback?: (progress: number) => void,
   ): Promise<{
-    s3Url: string;
     cloudfrontUrl: string;
     cloudfrontStreamingUrl: string;
     key: string;
@@ -298,12 +297,10 @@ export class S3Service {
       // Clean up the temporary file
       fs.unlinkSync(filePath);
 
-      const s3Url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
       const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
       const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
 
       return {
-        s3Url,
         cloudfrontUrl,
         cloudfrontStreamingUrl,
         key,
@@ -321,7 +318,6 @@ export class S3Service {
       | { path: string; originalname: string; mimetype: string },
     progressCallback?: (progress: number) => void,
   ): Promise<{
-    s3Url: string;
     cloudfrontUrl: string;
     cloudfrontStreamingUrl: string;
     key: string;

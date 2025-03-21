@@ -34,14 +34,14 @@ export class CreateCourseDto {
   cloudfrontUrl?: string;
 
   @IsOptional()
-  cloudfrontStreamingUrl?: string;
+  videoStreamingUrl?: string;
 
   @IsOptional()
   videoKey?: string;
 
   @IsOptional()
   videoThumbnailUrl?: string;
-  
+
   @ApiProperty({
     description: 'Topics covered in the course',
     example: ['Topic 1', 'Topic 2', 'Topic 3'],
