@@ -40,10 +40,6 @@ import {
 } from '@nestjs/swagger';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
-import {
-  CreateDownloadableResourceDto,
-  UpdateDownloadableResourceDto,
-} from './dto/downloadable-resource.dto';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -53,10 +49,9 @@ import {
   UpdateCategoryDto,
   CategoryResponseDto,
 } from './dto/category.dto';
-import { QueryCourseDto, SortOrder } from './dto/query-course.dto';
-import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
+import { QueryCourseDto } from './dto/query-course.dto';
 import { S3Service } from '../../fileUpload/aws/s3.service';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -69,11 +64,7 @@ if (!fs.existsSync(uploadPath)) {
 @UseGuards(JwtGuard, RolesGuard)
 @ApiBearerAuth('JWT')
 export class CourseController {
-  constructor(
-    private readonly courseService: CourseService,
-    private readonly cloudinaryUploadService: CloudinaryUploadService,
-    private readonly s3Service: S3Service,
-  ) {}
+  constructor(private readonly courseService: CourseService) {}
 
   // Category Endpoints ---------------------------------------------------------------------
 
@@ -137,16 +128,9 @@ export class CourseController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('video', {
-      storage: diskStorage({
-        destination: uploadPath,
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}-${file.originalname.replace(/\s+/g, '-')}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: {
-        fileSize: 1024 * 1024 * 500, // 500mb for video
+        fileSize: 1024 * 1024 * 500,
       },
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
@@ -220,30 +204,12 @@ export class CourseController {
     @UploadedFile() video: Express.Multer.File,
     @Req() request: Request & { user: { id: string } },
   ) {
-    if (!video) {
-      throw new BadRequestException('Video file is required');
-    }
-
-    try {
-      createCourseDto.userId = request.user.id;
-
-      if (Array.isArray(createCourseDto.topics)) {
-        createCourseDto.topics;
-      } else {
-        createCourseDto.topics = [createCourseDto.topics];
-      }
-
-      // Upload video to S3
-      const videoUrl = await this.s3Service.uploadVideo(video);
-
-      createCourseDto.videoUrl = videoUrl;
-      return this.courseService.createCourse(createCourseDto);
-    } catch (error) {
-      if (video.path && fs.existsSync(video.path)) {
-        fs.unlinkSync(video.path);
-      }
-      throw error;
-    }
+    const userId = request.user.id;
+    return await this.courseService.createCourse(
+      createCourseDto,
+      video,
+      userId,
+    );
   }
 
   @Get()
@@ -322,42 +288,16 @@ export class CourseController {
 
   // Downloadable Resource Endpoints ---------------------------------------------------------------------------------------------------------------------------------------
 
-  @Post(':courseId/downloadable-resources')
+  @Post(':courseId/toggle-download-state')
   @Roles('teacher', 'admin')
   @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Add a downloadable resource to a course' })
-  async addDownloadableResource(
-    @Param('courseId') courseId: string,
-    @Body() createDto: CreateDownloadableResourceDto,
-  ) {
-    createDto.courseId = courseId;
-    return await this.courseService.addDownloadableResource(createDto);
-  }
-
-  @Get(':courseId/downloadable-resources')
-  @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Get all downloadable resources for a course' })
-  async getDownloadableResources(@Param('courseId') courseId: string) {
-    return await this.courseService.getDownloadableResources(courseId);
-  }
-
-  @Patch('downloadable-resources/:id')
-  @Roles('teacher', 'admin')
-  @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Update a downloadable resource' })
-  async updateDownloadableResource(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateDownloadableResourceDto,
-  ) {
-    return await this.courseService.updateDownloadableResource(id, updateDto);
-  }
-
-  @Delete('downloadable-resources/:id')
-  @Roles('teacher', 'admin')
-  @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Delete a downloadable resource' })
-  async removeDownloadableResource(@Param('id') id: string) {
-    return await this.courseService.removeDownloadableResource(id);
+  @ApiOperation({ summary: 'Make course downloadable or not' })
+  async toggleCourseDownloadStatus(@Param('courseId') courseId: string) {
+    const data = await this.courseService.toggleCourseDownloadStatus(courseId);
+    return {
+      data,
+      status: 'success',
+    };
   }
 
   // Course Progress and Offline Access Endpoints

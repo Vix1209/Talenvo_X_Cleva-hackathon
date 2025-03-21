@@ -24,9 +24,23 @@ export class CreateCourseDto {
   @IsString()
   @IsNotEmpty()
   description: string;
-
   @IsOptional()
   videoUrl?: string;
+
+  @IsOptional()
+  s3VideoUrl?: string;
+
+  @IsOptional()
+  cloudfrontUrl?: string;
+
+  @IsOptional()
+  videoStreamingUrl?: string;
+
+  @IsOptional()
+  videoKey?: string;
+
+  @IsOptional()
+  videoThumbnailUrl?: string;
 
   @ApiProperty({
     description: 'Topics covered in the course',

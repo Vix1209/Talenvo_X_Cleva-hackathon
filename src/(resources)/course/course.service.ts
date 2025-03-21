@@ -20,10 +20,6 @@ import {
   CourseProgressService,
 } from './services';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
-import {
-  CreateDownloadableResourceDto,
-  UpdateDownloadableResourceDto,
-} from './dto/downloadable-resource.dto';
 import { CreateQuizDto, UpdateQuizDto } from './dto/quiz.dto';
 import { SubmitQuizDto } from './dto/quiz-submission.dto';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
@@ -36,6 +32,9 @@ import {
   SyncOfflineProgressDto,
   UpdateProgressDto,
 } from './dto/course-progress.dto';
+import { S3Service } from 'src/fileUpload/aws/s3.service';
+import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class CourseService {
@@ -49,23 +48,116 @@ export class CourseService {
     private readonly commentService: CommentService,
     private readonly additionalResourceService: AdditionalResourceService,
     private readonly courseProgressService: CourseProgressService,
+    private readonly s3Service: S3Service,
   ) {}
 
   // Core Course Methods
-  async createCourse(createCourseDto: CreateCourseDto): Promise<Course> {
+  async createCourse(
+    createCourseDto: CreateCourseDto,
+    video: Express.Multer.File,
+    userId: string,
+  ): Promise<Course> {
     try {
-      // If categoryId is provided, verify the category exists
-      if (createCourseDto.categoryId) {
-        await this.findOneCategory(createCourseDto.categoryId);
-      } else {
-        throw new BadRequestException('Category ID is required');
+      if (!video) {
+        throw new BadRequestException('Video file is required');
       }
 
-      const course = this.courseRepository.create({
-        ...createCourseDto,
-      });
+      try {
+        // Generate a temporary ID for tracking this upload
+        const uploadId = Date.now().toString();
+        console.log(`Starting video upload process (ID: ${uploadId})`);
 
-      return await this.courseRepository.save(course);
+        createCourseDto.userId = userId;
+
+        if (Array.isArray(createCourseDto.topics)) {
+          createCourseDto.topics;
+        } else {
+          createCourseDto.topics = [createCourseDto.topics];
+        }
+
+        // If categoryId is provided, verify the category exists
+        if (createCourseDto.categoryId) {
+          await this.findOneCategory(createCourseDto.categoryId);
+        } else {
+          throw new BadRequestException('Category ID is required');
+        }
+
+        // Initial upload notification
+        this.websocketService.emit('course-upload-progress', {
+          uploadId,
+          userId: createCourseDto.userId,
+          progress: 0,
+          status: 'started',
+          courseTitle: createCourseDto.title,
+        });
+
+        // Define progress callback function
+        const progressCallback = (progress: number) => {
+          // Emit progress updates via websocket
+          this.websocketService.emit('course-upload-progress', {
+            uploadId,
+            userId: createCourseDto.userId,
+            progress,
+            status: progress < 100 ? 'uploading' : 'processing',
+            courseTitle: createCourseDto.title,
+          });
+        };
+
+        // Upload video to S3 and get CloudFront URLs
+        const { cloudfrontStreamingUrl, key } =
+          await this.s3Service.uploadVideo(video, progressCallback);
+
+        console.log('Video upload completed:');
+        console.log('- CloudFront Streaming URL:', cloudfrontStreamingUrl);
+
+        // Notify that we're now creating the course
+        this.websocketService.emit('course-upload-progress', {
+          uploadId,
+          userId: createCourseDto.userId,
+          progress: 100,
+          status: 'saving',
+          courseTitle: createCourseDto.title,
+        });
+
+        // Create the course in the database with all URLs
+        createCourseDto.videoUrl = cloudfrontStreamingUrl; // Primary URL for streaming
+        createCourseDto.videoStreamingUrl = `${cloudfrontStreamingUrl}?response-content-disposition=attachment#t=5`; // Start at 5 seconds
+        createCourseDto.videoKey = key;
+
+        const createcourse = this.courseRepository.create({
+          ...createCourseDto,
+        });
+        const course = await this.courseRepository.save(createcourse);
+        // Final notification that course is created
+        this.websocketService.emit('course-upload-progress', {
+          uploadId,
+          userId: createCourseDto.userId,
+          progress: 100,
+          status: 'completed',
+          courseTitle: createCourseDto.title,
+          courseId: course.id,
+        });
+
+        // Broadcast to anyone interested that a new course was added
+        this.websocketService.emit('course-updated', { courseId: course.id });
+
+        return course;
+      } catch (error) {
+        console.error('Course creation error:', error);
+
+        // Error notification
+        this.websocketService.emit('course-upload-progress', {
+          userId: createCourseDto.userId,
+          progress: 0,
+          status: 'failed',
+          error: error.message || 'Upload failed',
+        });
+
+        if (video.path && fs.existsSync(video.path)) {
+          fs.unlinkSync(video.path);
+        }
+        throw error;
+      }
     } catch (error) {
       throw new BadRequestException(
         'Failed to create course: ' + error.message,
@@ -90,11 +182,7 @@ export class CourseService {
       .leftJoinAndSelect('course.category', 'category')
       .leftJoinAndSelect('course.comments', 'comments')
       .leftJoinAndSelect('course.quizzes', 'quizzes')
-      .leftJoinAndSelect('course.additionalResources', 'additionalResources')
-      .leftJoinAndSelect(
-        'course.downloadableResources',
-        'downloadableResources',
-      );
+      .leftJoinAndSelect('course.additionalResources', 'additionalResources');
 
     // Apply search filter if provided
     if (search) {
@@ -145,7 +233,6 @@ export class CourseService {
         'comments',
         'quizzes',
         'additionalResources',
-        'downloadableResources',
         'category',
       ],
     });
@@ -163,7 +250,8 @@ export class CourseService {
     // If categoryId is provided, verify the category exists
     if (updateCourseDto.categoryId) {
       await this.categoryService.findOneCategory(updateCourseDto.categoryId);
-    } else {}
+    } else {
+    }
 
     Object.assign(course, updateCourseDto);
 
@@ -206,26 +294,10 @@ export class CourseService {
   }
 
   // Delegate to Downloadable Resource Service
-  async addDownloadableResource(createDto: CreateDownloadableResourceDto) {
-    return this.downloadableResourceService.addDownloadableResource(createDto);
-  }
-
-  async getDownloadableResources(courseId: string) {
-    return this.downloadableResourceService.getDownloadableResources(courseId);
-  }
-
-  async updateDownloadableResource(
-    id: string,
-    updateDto: UpdateDownloadableResourceDto,
-  ) {
-    return this.downloadableResourceService.updateDownloadableResource(
-      id,
-      updateDto,
+  async toggleCourseDownloadStatus(courseId: string) {
+    return this.downloadableResourceService.toggleCourseDownloadStatus(
+      courseId,
     );
-  }
-
-  async removeDownloadableResource(id: string) {
-    return this.downloadableResourceService.removeDownloadableResource(id);
   }
 
   // Delegate to Quiz Service

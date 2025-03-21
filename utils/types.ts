@@ -79,3 +79,8 @@ export interface EmailNotificationMetadata {
 
   [key: string]: any;
 }
+
+export interface VideoUploadResult {
+  secure_url: string;
+  [key: string]: any;
+}

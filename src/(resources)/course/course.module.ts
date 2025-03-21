@@ -4,7 +4,6 @@ import { CourseController } from './course.controller';
 import { CourseService } from './course.service';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
-import { DownloadableResource } from './entities/downloadable-resource.entity';
 import { User } from '../users/entities/user.entity';
 import { Category } from './entities/category.entity';
 import { Quiz } from './entities/quiz.entity';
@@ -34,7 +33,6 @@ import { AwsModule } from '../../fileUpload/aws/aws.module';
       Course,
       CourseProgress,
       User,
-      DownloadableResource,
       Quiz,
       Comment,
       AdditionalResource,

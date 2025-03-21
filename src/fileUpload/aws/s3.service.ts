@@ -3,10 +3,17 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   CreateMultipartUploadCommand,
   UploadPartCommand,
   CompleteMultipartUploadCommand,
 } from '@aws-sdk/client-s3';
+import {
+  CloudFrontClient,
+  CreateInvalidationCommand,
+  GetDistributionCommand,
+} from '@aws-sdk/client-cloudfront';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -14,9 +21,12 @@ import * as os from 'os';
 @Injectable()
 export class S3Service {
   private readonly s3Client: S3Client;
+  private readonly cloudfrontClient: CloudFrontClient;
   private readonly bucket: string;
   private readonly region: string;
-  private readonly chunkSize: number = 5 * 1024 * 1024; // 5MB chunks (AWS minimum)
+  private readonly cloudfrontDistributionId: string;
+  private readonly cloudfrontDomain: string;
+  private readonly chunkSize: number = 10 * 1024 * 1024; // 10MB chunks for large files
 
   constructor(private configService: ConfigService) {
     this.region = this.configService.get('AWS_REGION') || 'us-east-1';
@@ -24,10 +34,20 @@ export class S3Service {
     const secretAccessKey =
       this.configService.get('AWS_SECRET_ACCESS_KEY') || '';
     this.bucket = this.configService.get('AWS_S3_BUCKET') || '';
+    this.cloudfrontDistributionId =
+      this.configService.get('AWS_CLOUDFRONT_DISTRIBUTION_ID') || '';
+    this.cloudfrontDomain =
+      this.configService.get('AWS_CLOUDFRONT_DOMAIN') || '';
 
     if (!this.bucket) {
       throw new BadRequestException(
         'AWS_S3_BUCKET environment variable is not set',
+      );
+    }
+
+    if (!this.cloudfrontDistributionId || !this.cloudfrontDomain) {
+      throw new BadRequestException(
+        'CloudFront distribution ID or domain is not set',
       );
     }
 
@@ -38,9 +58,25 @@ export class S3Service {
         secretAccessKey,
       },
     });
+
+    this.cloudfrontClient = new CloudFrontClient({
+      region: this.region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
   }
 
-  async uploadSmallVideo(file: Express.Multer.File): Promise<string> {
+  async uploadSmallVideo(
+    file: Express.Multer.File,
+    progressCallback?: (progress: number) => void,
+  ): Promise<{
+    s3Url: string;
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    key: string;
+  }> {
     if (!file) {
       throw new BadRequestException('No video file provided');
     }
@@ -48,17 +84,60 @@ export class S3Service {
     // For smaller files (< 100MB), use regular upload
     const key = `course/${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
 
+    // Determine if we should force streaming for less-compatible formats
+    const shouldForceStreamingContent = (
+      mimeType: string,
+      filename: string,
+    ): boolean => {
+      const ext = filename.split('.').pop()?.toLowerCase();
+
+      // These formats need special handling
+      if (
+        ext === 'mkv' ||
+        ext === 'avi' ||
+        mimeType === 'video/x-matroska' ||
+        mimeType === 'video/x-msvideo'
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const forceStreaming = shouldForceStreamingContent(
+      file.mimetype,
+      file.originalname,
+    );
+
     const params = {
       Bucket: this.bucket,
       Key: key,
       Body: file.buffer,
-      ContentType: file.mimetype,
+      CacheControl: 'max-age=31536000', // Cache for 1 year
+      ContentType: forceStreaming ? 'video/mp4' : file.mimetype, // Force video/mp4 for MKV files
+      ContentDisposition: 'inline',
     };
 
     try {
+      // Call progress callback with 0% at start
+      if (progressCallback) progressCallback(0);
+
       const command = new PutObjectCommand(params);
       await this.s3Client.send(command);
-      return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+
+      // Call progress callback with 100% when complete
+      if (progressCallback) progressCallback(100);
+
+      const s3Url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
+      const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
+
+      return {
+        s3Url,
+        cloudfrontUrl,
+        cloudfrontStreamingUrl,
+        key,
+      };
     } catch (error) {
       console.error('Failed to upload small video:', error);
       throw new BadRequestException(`Failed to upload video: ${error.message}`);
@@ -69,7 +148,12 @@ export class S3Service {
     filePath: string,
     originalFilename: string,
     mimeType: string,
-  ): Promise<string> {
+    progressCallback?: (progress: number) => void,
+  ): Promise<{
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    key: string;
+  }> {
     const key = `course/${Date.now()}-${originalFilename.replace(/\s+/g, '-')}`;
 
     try {
@@ -77,16 +161,49 @@ export class S3Service {
         throw new BadRequestException('File not found');
       }
 
-      if (fs.statSync(filePath).size > 1024 * 1024 * 500) {
+      const fileSize = fs.statSync(filePath).size;
+
+      if (fileSize > 1024 * 1024 * 500) {
         throw new BadRequestException(
           'File size exceeds the maximum limit of 500MB',
         );
       }
 
+      // Initialize progress
+      if (progressCallback) progressCallback(0);
+      console.log('Starting multipart upload...');
+
+      // Determine if we should force streaming for less-compatible formats
+      const shouldForceStreamingContent = (
+        mimeType: string,
+        filename: string,
+      ): boolean => {
+        const ext = filename.split('.').pop()?.toLowerCase();
+
+        // These formats need special handling
+        if (
+          ext === 'mkv' ||
+          ext === 'avi' ||
+          mimeType === 'video/x-matroska' ||
+          mimeType === 'video/x-msvideo'
+        ) {
+          return true;
+        }
+
+        return false;
+      };
+
+      const forceStreaming = shouldForceStreamingContent(
+        mimeType,
+        originalFilename,
+      );
+
       const createCommand = new CreateMultipartUploadCommand({
         Bucket: this.bucket,
         Key: key,
-        ContentType: mimeType,
+        ContentType: forceStreaming ? 'video/mp4' : mimeType, // Force video/mp4 for MKV files
+        CacheControl: 'max-age=31536000', // Cache for 1 year#
+        ContentDisposition: 'inline',
       });
 
       const { UploadId } = await this.s3Client.send(createCommand);
@@ -96,14 +213,19 @@ export class S3Service {
       }
 
       // Step 2: Upload parts
-      const fileSize = fs.statSync(filePath).size;
       const numParts = Math.ceil(fileSize / this.chunkSize);
       const uploadedParts: { ETag: string | undefined; PartNumber: number }[] =
         [];
+      let totalBytesUploaded = 0;
+
+      console.log(
+        `Total file size: ${fileSize} bytes, will be uploaded in ${numParts} parts`,
+      );
 
       for (let i = 0; i < numParts; i++) {
         const start = i * this.chunkSize;
         const end = Math.min(start + this.chunkSize, fileSize);
+        const chunkSize = end - start;
 
         // Create a read stream for just this chunk
         const fileStream = fs.createReadStream(filePath, {
@@ -136,7 +258,23 @@ export class S3Service {
           ETag,
           PartNumber: i + 1,
         });
+
+        // Update progress
+        totalBytesUploaded += chunkSize;
+        const progressPercent = Math.round(
+          (totalBytesUploaded / fileSize) * 100,
+        );
+
+        console.log(
+          `Uploaded part ${i + 1}/${numParts} (${progressPercent}% complete)`,
+        );
+
+        if (progressCallback) {
+          progressCallback(progressPercent);
+        }
       }
+
+      console.log('All parts uploaded, completing multipart upload...');
 
       // Step 3: Complete multipart upload
       const completeCommand = new CompleteMultipartUploadCommand({
@@ -149,11 +287,24 @@ export class S3Service {
       });
 
       await this.s3Client.send(completeCommand);
+      console.log('Multipart upload completed successfully');
+
+      // Ensure 100% progress is reported
+      if (progressCallback) {
+        progressCallback(100);
+      }
 
       // Clean up the temporary file
       fs.unlinkSync(filePath);
 
-      return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
+      const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
+
+      return {
+        cloudfrontUrl,
+        cloudfrontStreamingUrl,
+        key,
+      };
     } catch (error) {
       console.error('Failed to upload large video:', error);
       throw new BadRequestException(`Failed to upload video: ${error.message}`);
@@ -165,7 +316,12 @@ export class S3Service {
     file:
       | Express.Multer.File
       | { path: string; originalname: string; mimetype: string },
-  ): Promise<string> {
+    progressCallback?: (progress: number) => void,
+  ): Promise<{
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    key: string;
+  }> {
     if ('buffer' in file && file.buffer) {
       if (file.buffer.length < 100 * 1024 * 1024) {
         return this.uploadSmallVideo(file as Express.Multer.File);
@@ -176,319 +332,94 @@ export class S3Service {
           tempFilePath,
           file.originalname,
           file.mimetype,
+          progressCallback,
         );
       }
     } else if ('path' in file) {
-      return this.uploadLargeVideo(file.path, file.originalname, file.mimetype);
+      return this.uploadLargeVideo(
+        file.path,
+        file.originalname,
+        file.mimetype,
+        progressCallback,
+      );
     } else {
       throw new BadRequestException('Invalid file format provided');
     }
   }
 
-  getVideoUrl(courseId: string, fileName: string): string {
-    const key = `courses/${courseId}/${fileName}`;
-    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  // Modify getVideoUrls to include a download URL
+  getVideoUrls(key: string): {
+    s3Url: string;
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    downloadUrl: string; // New download URL
+  } {
+    const s3Url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+    const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
+    const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
+    const downloadUrl = `https://${this.cloudfrontDomain}/${key}?response-content-disposition=attachment`;
+
+    return {
+      s3Url,
+      cloudfrontUrl,
+      cloudfrontStreamingUrl,
+      downloadUrl,
+    };
   }
+
+  // Add this method to your S3Service
+  async getDownloadUrl(key: string, filename?: string): Promise<string> {
+    // Get original filename from key if not provided
+    const originalFilename = filename || key.split('/').pop() || 'download';
+
+    // Create a presigned URL for downloading
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ResponseContentDisposition: `attachment; filename="${encodeURIComponent(originalFilename)}"`,
+    });
+
+    // Create a presigned URL that will force download (expires in 15 minutes)
+    const presignedUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 900,
+    });
+
+    return presignedUrl;
+  }
+
+  // async createCloudFrontInvalidation(key: string): Promise<void> {
+  //   try {
+  //     const params = {
+  //       DistributionId: this.cloudfrontDistributionId,
+  //       InvalidationBatch: {
+  //         CallerReference: Date.now().toString(),
+  //         Paths: {
+  //           Quantity: 1,
+  //           Items: [`/${key}`],
+  //         },
+  //       },
+  //     };
+
+  //     const command = new CreateInvalidationCommand(params);
+  //     await this.cloudfrontClient.send(command);
+  //     console.log(`CloudFront invalidation created for key: ${key}`);
+  //   } catch (error) {
+  //     console.error('Failed to create CloudFront invalidation:', error);
+  //   }
+  // }
+
+  // async getCloudFrontDistributionInfo(): Promise<any> {
+  //   try {
+  //     const command = new GetDistributionCommand({
+  //       Id: this.cloudfrontDistributionId,
+  //     });
+  //     const response = await this.cloudfrontClient.send(command);
+  //     return response.Distribution;
+  //   } catch (error) {
+  //     console.error('Failed to get CloudFront distribution info:', error);
+  //     throw new BadRequestException(
+  //       `Failed to get CloudFront distribution info: ${error.message}`,
+  //     );
+  //   }
+  // }
 }
-
-// import { Injectable, BadRequestException } from '@nestjs/common';
-// import { ConfigService } from '@nestjs/config';
-// import {
-//   S3Client,
-//   PutObjectCommand,
-//   CreateMultipartUploadCommand,
-//   UploadPartCommand,
-//   CompleteMultipartUploadCommand,
-//   CompletedPart,
-//   GetObjectCommand,
-// } from '@aws-sdk/client-s3';
-// import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-// import { Readable } from 'stream';
-
-// @Injectable()
-// export class S3Service {
-//   private readonly s3Client: S3Client;
-//   private readonly bucket: string;
-//   private readonly region: string;
-//   private readonly MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
-//   private readonly ALLOWED_VIDEO_FORMATS = ['mp4', 'mov', 'avi', 'webm', 'mkv'];
-//   private readonly ALLOWED_VIDEO_MIME_TYPES = [
-//     'video/mp4',
-//     'video/quicktime',
-//     'video/x-msvideo',
-//     'video/webm',
-//     'video/x-matroska',
-//   ];
-
-//   constructor(private configService: ConfigService) {
-//     this.region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
-//     const accessKeyId =
-//       this.configService.get<string>('AWS_ACCESS_KEY_ID') || '';
-//     const secretAccessKey =
-//       this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || '';
-//     const bucketName = this.configService.get<string>('AWS_S3_BUCKET');
-
-//     if (!bucketName) {
-//       throw new Error('AWS_S3_BUCKET environment variable is not set');
-//     }
-
-//     this.bucket = bucketName;
-//     this.s3Client = new S3Client({
-//       region: this.region,
-//       credentials: {
-//         accessKeyId,
-//         secretAccessKey,
-//       },
-//     });
-//   }
-
-//   async uploadVideo(
-//     file: Express.Multer.File,
-//     folder: string,
-//   ): Promise<string> {
-//     // Validate file
-//     if (!file) {
-//       throw new BadRequestException('No video file provided');
-//     }
-
-//     if (!file.buffer) {
-//       throw new BadRequestException('File buffer is missing');
-//     }
-
-//     // Validate file type using both extension and mime type
-//     const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
-//     const isValidExtension =
-//       fileExtension && this.ALLOWED_VIDEO_FORMATS.includes(fileExtension);
-//     const isValidMimeType = this.ALLOWED_VIDEO_MIME_TYPES.includes(
-//       file.mimetype,
-//     );
-
-//     if (!isValidExtension || !isValidMimeType) {
-//       throw new BadRequestException(
-//         `Invalid video format. Allowed formats are: ${this.ALLOWED_VIDEO_FORMATS.join(', ')}. ` +
-//           `Received file type: ${file.mimetype} with extension: ${fileExtension || 'unknown'}`,
-//       );
-//     }
-
-//     // Validate file size
-//     if (file.size > this.MAX_VIDEO_SIZE) {
-//       throw new BadRequestException(
-//         `Video size exceeds the maximum limit of ${
-//           this.MAX_VIDEO_SIZE / (1024 * 1024 * 1024)
-//         }GB. Current size: ${(file.size / (1024 * 1024 * 1024)).toFixed(2)}GB`,
-//       );
-//     }
-
-//     const key = `${folder}/${Date.now()}-${file.originalname}`;
-
-//     try {
-//       // For files larger than 100MB, use multipart upload
-//       if (file.size > 100 * 1024 * 1024) {
-//         await this.multipartUpload(file, key);
-//       } else {
-//         // For smaller files, use regular upload
-//         const command = new PutObjectCommand({
-//           Bucket: this.bucket,
-//           Key: key,
-//           Body: file.buffer,
-//           ContentType: file.mimetype,
-//         });
-
-//         await this.s3Client.send(command);
-//       }
-
-//       // Generate a pre-signed URL for accessing the file
-//       // This URL will be valid for 7 days
-//       const getObjectCommand = new GetObjectCommand({
-//         Bucket: this.bucket,
-//         Key: key,
-//       });
-
-//       const signedUrl = await getSignedUrl(this.s3Client, getObjectCommand, {
-//         expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
-//       });
-
-//       return signedUrl;
-//     } catch (error) {
-//       console.error('S3 upload error:', error);
-//       throw new BadRequestException(
-//         `Failed to upload video: ${error.message || 'Unknown error'}`,
-//       );
-//     }
-//   }
-
-//   private async multipartUpload(
-//     file: Express.Multer.File,
-//     key: string,
-//   ): Promise<void> {
-//     const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
-//     const parts: CompletedPart[] = [];
-
-//     try {
-//       // Initialize multipart upload
-//       const createCommand = new CreateMultipartUploadCommand({
-//         Bucket: this.bucket,
-//         Key: key,
-//         ContentType: file.mimetype,
-//       });
-
-//       const { UploadId } = await this.s3Client.send(createCommand);
-
-//       if (!UploadId) {
-//         throw new Error('Failed to initialize multipart upload');
-//       }
-
-//       const stream = Readable.from(file.buffer);
-//       let partNumber = 1;
-//       let chunk = await this.readChunk(stream, CHUNK_SIZE);
-
-//       // Upload parts
-//       while (chunk) {
-//         const uploadCommand = new UploadPartCommand({
-//           Bucket: this.bucket,
-//           Key: key,
-//           UploadId,
-//           PartNumber: partNumber,
-//           Body: chunk,
-//         });
-
-//         const { ETag } = await this.s3Client.send(uploadCommand);
-
-//         if (!ETag) {
-//           throw new Error(`Failed to upload part ${partNumber}`);
-//         }
-
-//         parts.push({
-//           ETag,
-//           PartNumber: partNumber,
-//         });
-
-//         partNumber++;
-//         chunk = await this.readChunk(stream, CHUNK_SIZE);
-//       }
-
-//       // Complete multipart upload
-//       const completeCommand = new CompleteMultipartUploadCommand({
-//         Bucket: this.bucket,
-//         Key: key,
-//         UploadId,
-//         MultipartUpload: { Parts: parts },
-//       });
-
-//       await this.s3Client.send(completeCommand);
-//     } catch (error) {
-//       console.error('Multipart upload error:', error);
-//       throw new BadRequestException(
-//         `Failed to upload video: ${error.message || 'Unknown error'}`,
-//       );
-//     }
-//   }
-
-//   private readChunk(
-//     stream: Readable,
-//     size: number,
-//   ): Promise<Buffer | undefined> {
-//     return new Promise((resolve, reject) => {
-//       const chunks: Buffer[] = [];
-//       let totalSize = 0;
-
-//       stream.on('data', (chunk: Buffer) => {
-//         chunks.push(chunk);
-//         totalSize += chunk.length;
-
-//         if (totalSize >= size) {
-//           stream.pause();
-//           resolve(Buffer.concat(chunks));
-//         }
-//       });
-
-//       stream.on('end', () => {
-//         if (chunks.length === 0) {
-//           resolve(undefined);
-//         } else {
-//           resolve(Buffer.concat(chunks));
-//         }
-//       });
-
-//       stream.on('error', reject);
-//     });
-//   }
-// }
-
-// import { Injectable } from '@nestjs/common';
-// import { ConfigService } from '@nestjs/config';
-// import {
-//   S3Client,
-//   PutObjectCommand,
-//   ObjectCannedACL,
-//   GetObjectCommand,
-// } from '@aws-sdk/client-s3';
-// import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-// import { BadRequestException } from 'utils';
-
-// @Injectable()
-// export class S3Service {
-//   private readonly s3Client: S3Client;
-//   private readonly bucket: string;
-//   private readonly region: string;
-
-//   constructor(private configService: ConfigService) {
-//     this.region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
-//     const accessKeyId =
-//       this.configService.get<string>('AWS_ACCESS_KEY_ID') || '';
-//     const secretAccessKey =
-//       this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || '';
-//     const bucketName = this.configService.get<string>('AWS_S3_BUCKET');
-
-//     if (!bucketName) {
-//       throw new BadRequestException(
-//         'AWS_S3_BUCKET environment variable is not set',
-//       );
-//     }
-
-//     this.bucket = bucketName;
-//     this.s3Client = new S3Client({
-//       region: this.region,
-//       credentials: {
-//         accessKeyId,
-//         secretAccessKey,
-//       },
-//     });
-//   }
-
-//   async uploadVideo(file: Express.Multer.File, folder: string) {
-//     // Validate file
-//     if (!file) {
-//       throw new BadRequestException('No video file provided');
-//     }
-
-//     const previewResult = await this.uploadToS3(file, folder);
-
-//     return previewResult;
-//   }
-
-//   async uploadToS3(file: Express.Multer.File, folder: string): Promise<string> {
-//     if (!file.buffer) {
-//       throw new BadRequestException(`File buffer is missing for ${file.fieldname}`);
-//     }
-
-//     // Prepare upload params
-//     const params = {
-//       Bucket: this.bucket,
-//       Key: `${folder}/${file.originalname}`, // Define the file path in S3
-//       Body: file.buffer, // File content
-//       ContentType: file.mimetype, // content type is set
-//     };
-
-//     try {
-//       const command = new PutObjectCommand(params);
-//       await this.s3Client.send(command);
-//       return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${params.Key}`;
-//     } catch (error) {
-//       console.error(`Failed to upload ${file.fieldname}:`, error);
-//       throw new BadRequestException(
-//         `Failed to upload ${file.fieldname}, ${error.message}`,
-//       );
-//     }
-//   }
-// }

@@ -156,7 +156,7 @@ export class CourseProgressService {
       // Check if course exists and is available for offline access
       const course = await this.courseRepository.findOne({
         where: { id: courseId },
-        relations: ['downloadableResources', 'quizzes', 'additionalResources'],
+        relations: ['quizzes', 'additionalResources'],
       });
 
       if (!course) {
@@ -290,7 +290,7 @@ export class CourseProgressService {
     try {
       const course = await this.courseRepository.findOne({
         where: { id: courseId },
-        relations: ['downloadableResources', 'quizzes', 'additionalResources'],
+        relations: ['quizzes', 'additionalResources'],
       });
 
       if (!course) {

@@ -6,12 +6,15 @@ import { Readable } from 'stream';
 export class CloudinaryUploadService {
   private readonly MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images
   private readonly ALLOWED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'webp'];
+  private readonly cloud_name = process.env.CLOUDINARY_CLOUD_NAME || '';
+  private readonly api_key = process.env.CLOUDINARY_API_KEY || '';
+  private readonly api_secret = process.env.CLOUDINARY_API_SECRET || '';
 
   constructor() {
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
+      cloud_name: this.cloud_name,
+      api_key: this.api_key,
+      api_secret: this.api_secret,
     });
   }
 
@@ -29,7 +32,7 @@ export class CloudinaryUploadService {
 
     if (file.size > this.MAX_IMAGE_SIZE) {
       throw new BadRequestException(
-        `File size exceeds the maximum limit of 6MB. Current file size: ${(
+        `File size exceeds the maximum limit of 10MB. Current file size: ${(
           file.size /
           (1024 * 1024)
         ).toFixed(2)}MB`,

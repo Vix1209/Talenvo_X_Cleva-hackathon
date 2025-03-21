@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Course } from '../entities/course.entity';
-import { DownloadableResource } from '../entities/downloadable-resource.entity';
 import { AdditionalResource } from '../entities/additional_resource.entity';
 import { Quiz } from '../entities/quiz.entity';
 
@@ -30,10 +29,6 @@ export class StorageCalculatorService {
       // Add main video size
       totalSize += this.calculateMainVideoSize(course.duration);
 
-      // Add downloadable resources size
-      totalSize += this.calculateDownloadableResourcesSize(
-        course.downloadableResources,
-      );
 
       // Add additional resources size
       totalSize += this.calculateAdditionalResourcesSize(
@@ -90,35 +85,6 @@ export class StorageCalculatorService {
       );
       return 10;
     }
-  }
-
-  /**
-   * Calculates the total size of downloadable resources
-   */
-  private calculateDownloadableResourcesSize(
-    resources?: DownloadableResource[],
-  ): number {
-    if (!resources?.length) return 0;
-
-    return resources.reduce((total, resource) => {
-      if (resource.size) {
-        return total + Number(resource.size);
-      }
-
-      if (!resource.type) return total;
-      
-      const fileType = resource.type.toLowerCase();
-      if (fileType.includes('video')) {
-        return total + this.DEFAULT_RESOURCE_SIZES.video;
-      }
-      if (fileType.includes('audio')) {
-        return total + this.DEFAULT_RESOURCE_SIZES.audio;
-      }
-      if (fileType.includes('pdf')) {
-        return total + this.DEFAULT_RESOURCE_SIZES.pdf;
-      }
-      return total + this.DEFAULT_RESOURCE_SIZES.default;
-    }, 0);
   }
 
   /**
