@@ -29,6 +29,18 @@ export class Course {
   @Column({ type: 'text' })
   videoUrl: string;
 
+  @Column({ type: 'text', nullable: true })
+  s3VideoUrl: string;
+
+  @Column({ type: 'text', nullable: true })
+  cloudfrontUrl: string;
+
+  @Column({ type: 'text', nullable: true })
+  cloudfrontStreamingUrl: string;
+
+  @Column({ type: 'text', nullable: true, select: false })
+  videoKey: string;
+
   @Column({ type: 'json' })
   topics: string[];
 

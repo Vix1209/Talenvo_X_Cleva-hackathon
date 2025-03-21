@@ -141,7 +141,7 @@ export class CourseController {
     FileInterceptor('video', {
       storage: memoryStorage(),
       limits: {
-        fileSize: 1024 * 1024 * 500, // Keep the high limit since we handle large files
+        fileSize: 1024 * 1024 * 500,
       },
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
@@ -243,10 +243,6 @@ export class CourseController {
 
       // Define progress callback function
       const progressCallback = (progress: number) => {
-        console.log(
-          `Upload progress for "${createCourseDto.title}": ${progress}%`,
-        );
-
         // Emit progress updates via websocket
         this.websocketService.emit('course-upload-progress', {
           uploadId,
@@ -257,9 +253,14 @@ export class CourseController {
         });
       };
 
-      // Upload video to S3
-      const videoUrl = await this.s3Service.uploadVideo(video);
-      console.log('Video upload completed, URL:', videoUrl);
+      // Upload video to S3 and get CloudFront URLs
+      const { s3Url, cloudfrontUrl, cloudfrontStreamingUrl, key } =
+        await this.s3Service.uploadVideo(video, progressCallback);
+
+      console.log('Video upload completed:');
+      console.log('- S3 URL:', s3Url);
+      console.log('- CloudFront URL:', cloudfrontUrl);
+      console.log('- CloudFront Streaming URL:', cloudfrontStreamingUrl);
 
       // Notify that we're now creating the course
       this.websocketService.emit('course-upload-progress', {
@@ -270,10 +271,18 @@ export class CourseController {
         courseTitle: createCourseDto.title,
       });
 
-      // Create the course in the database
-      createCourseDto.videoUrl = videoUrl;
-      const course = await this.courseService.createCourse(createCourseDto);
+      // Create the course in the database with all URLs
+      createCourseDto.videoUrl = cloudfrontStreamingUrl; // Primary URL for streaming
+      createCourseDto.s3VideoUrl = s3Url;
+      createCourseDto.cloudfrontUrl = cloudfrontUrl;
+      createCourseDto.cloudfrontStreamingUrl = cloudfrontStreamingUrl;
+      createCourseDto.videoKey = key;
 
+      // Generate a thumbnail URL (this would typically be done by a video processing service)
+      // For now, we'll just set it to the CloudFront URL with a timestamp to force a frame grab
+      createCourseDto.videoThumbnailUrl = `${cloudfrontUrl}#t=5`; // Grab frame at 5 seconds
+
+      const course = await this.courseService.createCourse(createCourseDto);
       // Final notification that course is created
       this.websocketService.emit('course-upload-progress', {
         uploadId,

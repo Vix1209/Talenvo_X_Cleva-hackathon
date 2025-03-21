@@ -3,10 +3,17 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   CreateMultipartUploadCommand,
   UploadPartCommand,
   CompleteMultipartUploadCommand,
 } from '@aws-sdk/client-s3';
+import {
+  CloudFrontClient,
+  CreateInvalidationCommand,
+  GetDistributionCommand,
+} from '@aws-sdk/client-cloudfront';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -14,8 +21,11 @@ import * as os from 'os';
 @Injectable()
 export class S3Service {
   private readonly s3Client: S3Client;
+  private readonly cloudfrontClient: CloudFrontClient;
   private readonly bucket: string;
   private readonly region: string;
+  private readonly cloudfrontDistributionId: string;
+  private readonly cloudfrontDomain: string;
   private readonly chunkSize: number = 10 * 1024 * 1024; // 10MB chunks for large files
 
   constructor(private configService: ConfigService) {
@@ -24,6 +34,10 @@ export class S3Service {
     const secretAccessKey =
       this.configService.get('AWS_SECRET_ACCESS_KEY') || '';
     this.bucket = this.configService.get('AWS_S3_BUCKET') || '';
+    this.cloudfrontDistributionId =
+      this.configService.get('AWS_CLOUDFRONT_DISTRIBUTION_ID') || '';
+    this.cloudfrontDomain =
+      this.configService.get('AWS_CLOUDFRONT_DOMAIN') || '';
 
     if (!this.bucket) {
       throw new BadRequestException(
@@ -31,7 +45,21 @@ export class S3Service {
       );
     }
 
+    if (!this.cloudfrontDistributionId || !this.cloudfrontDomain) {
+      throw new BadRequestException(
+        'CloudFront distribution ID or domain is not set',
+      );
+    }
+
     this.s3Client = new S3Client({
+      region: this.region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+
+    this.cloudfrontClient = new CloudFrontClient({
       region: this.region,
       credentials: {
         accessKeyId,
@@ -43,7 +71,12 @@ export class S3Service {
   async uploadSmallVideo(
     file: Express.Multer.File,
     progressCallback?: (progress: number) => void,
-  ): Promise<string> {
+  ): Promise<{
+    s3Url: string;
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    key: string;
+  }> {
     if (!file) {
       throw new BadRequestException('No video file provided');
     }
@@ -51,11 +84,38 @@ export class S3Service {
     // For smaller files (< 100MB), use regular upload
     const key = `course/${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
 
+    // Determine if we should force streaming for less-compatible formats
+    const shouldForceStreamingContent = (
+      mimeType: string,
+      filename: string,
+    ): boolean => {
+      const ext = filename.split('.').pop()?.toLowerCase();
+
+      // These formats need special handling
+      if (
+        ext === 'mkv' ||
+        ext === 'avi' ||
+        mimeType === 'video/x-matroska' ||
+        mimeType === 'video/x-msvideo'
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const forceStreaming = shouldForceStreamingContent(
+      file.mimetype,
+      file.originalname,
+    );
+
     const params = {
       Bucket: this.bucket,
       Key: key,
       Body: file.buffer,
-      ContentType: file.mimetype,
+      CacheControl: 'max-age=31536000', // Cache for 1 year
+      ContentType: forceStreaming ? 'video/mp4' : file.mimetype, // Force video/mp4 for MKV files
+      ContentDisposition: 'inline',
     };
 
     try {
@@ -68,7 +128,16 @@ export class S3Service {
       // Call progress callback with 100% when complete
       if (progressCallback) progressCallback(100);
 
-      return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const s3Url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
+      const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
+
+      return {
+        s3Url,
+        cloudfrontUrl,
+        cloudfrontStreamingUrl,
+        key,
+      };
     } catch (error) {
       console.error('Failed to upload small video:', error);
       throw new BadRequestException(`Failed to upload video: ${error.message}`);
@@ -80,7 +149,12 @@ export class S3Service {
     originalFilename: string,
     mimeType: string,
     progressCallback?: (progress: number) => void,
-  ): Promise<string> {
+  ): Promise<{
+    s3Url: string;
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    key: string;
+  }> {
     const key = `course/${Date.now()}-${originalFilename.replace(/\s+/g, '-')}`;
 
     try {
@@ -100,10 +174,37 @@ export class S3Service {
       if (progressCallback) progressCallback(0);
       console.log('Starting multipart upload...');
 
+      // Determine if we should force streaming for less-compatible formats
+      const shouldForceStreamingContent = (
+        mimeType: string,
+        filename: string,
+      ): boolean => {
+        const ext = filename.split('.').pop()?.toLowerCase();
+
+        // These formats need special handling
+        if (
+          ext === 'mkv' ||
+          ext === 'avi' ||
+          mimeType === 'video/x-matroska' ||
+          mimeType === 'video/x-msvideo'
+        ) {
+          return true;
+        }
+
+        return false;
+      };
+
+      const forceStreaming = shouldForceStreamingContent(
+        mimeType,
+        originalFilename,
+      );
+
       const createCommand = new CreateMultipartUploadCommand({
         Bucket: this.bucket,
         Key: key,
-        ContentType: mimeType,
+        ContentType: forceStreaming ? 'video/mp4' : mimeType, // Force video/mp4 for MKV files
+        CacheControl: 'max-age=31536000', // Cache for 1 year#
+        ContentDisposition: 'inline',
       });
 
       const { UploadId } = await this.s3Client.send(createCommand);
@@ -197,7 +298,16 @@ export class S3Service {
       // Clean up the temporary file
       fs.unlinkSync(filePath);
 
-      return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const s3Url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
+      const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
+
+      return {
+        s3Url,
+        cloudfrontUrl,
+        cloudfrontStreamingUrl,
+        key,
+      };
     } catch (error) {
       console.error('Failed to upload large video:', error);
       throw new BadRequestException(`Failed to upload video: ${error.message}`);
@@ -210,7 +320,12 @@ export class S3Service {
       | Express.Multer.File
       | { path: string; originalname: string; mimetype: string },
     progressCallback?: (progress: number) => void,
-  ): Promise<string> {
+  ): Promise<{
+    s3Url: string;
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    key: string;
+  }> {
     if ('buffer' in file && file.buffer) {
       if (file.buffer.length < 100 * 1024 * 1024) {
         return this.uploadSmallVideo(file as Express.Multer.File);
@@ -236,8 +351,79 @@ export class S3Service {
     }
   }
 
-  getVideoUrl(courseId: string, fileName: string): string {
-    const key = `courses/${courseId}/${fileName}`;
-    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  // Modify getVideoUrls to include a download URL
+  getVideoUrls(key: string): {
+    s3Url: string;
+    cloudfrontUrl: string;
+    cloudfrontStreamingUrl: string;
+    downloadUrl: string; // New download URL
+  } {
+    const s3Url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+    const cloudfrontUrl = `https://${this.cloudfrontDomain}/${key}`;
+    const cloudfrontStreamingUrl = `https://${this.cloudfrontDomain}/${key}`;
+    const downloadUrl = `https://${this.cloudfrontDomain}/${key}?response-content-disposition=attachment`;
+
+    return {
+      s3Url,
+      cloudfrontUrl,
+      cloudfrontStreamingUrl,
+      downloadUrl,
+    };
   }
+
+  // Add this method to your S3Service
+  async getDownloadUrl(key: string, filename?: string): Promise<string> {
+    // Get original filename from key if not provided
+    const originalFilename = filename || key.split('/').pop() || 'download';
+
+    // Create a presigned URL for downloading
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ResponseContentDisposition: `attachment; filename="${encodeURIComponent(originalFilename)}"`,
+    });
+
+    // Create a presigned URL that will force download (expires in 15 minutes)
+    const presignedUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 900,
+    });
+
+    return presignedUrl;
+  }
+
+  // async createCloudFrontInvalidation(key: string): Promise<void> {
+  //   try {
+  //     const params = {
+  //       DistributionId: this.cloudfrontDistributionId,
+  //       InvalidationBatch: {
+  //         CallerReference: Date.now().toString(),
+  //         Paths: {
+  //           Quantity: 1,
+  //           Items: [`/${key}`],
+  //         },
+  //       },
+  //     };
+
+  //     const command = new CreateInvalidationCommand(params);
+  //     await this.cloudfrontClient.send(command);
+  //     console.log(`CloudFront invalidation created for key: ${key}`);
+  //   } catch (error) {
+  //     console.error('Failed to create CloudFront invalidation:', error);
+  //   }
+  // }
+
+  // async getCloudFrontDistributionInfo(): Promise<any> {
+  //   try {
+  //     const command = new GetDistributionCommand({
+  //       Id: this.cloudfrontDistributionId,
+  //     });
+  //     const response = await this.cloudfrontClient.send(command);
+  //     return response.Distribution;
+  //   } catch (error) {
+  //     console.error('Failed to get CloudFront distribution info:', error);
+  //     throw new BadRequestException(
+  //       `Failed to get CloudFront distribution info: ${error.message}`,
+  //     );
+  //   }
+  // }
 }
