@@ -50,7 +50,6 @@ import {
   CategoryResponseDto,
 } from './dto/category.dto';
 import { QueryCourseDto } from './dto/query-course.dto';
-import { S3Service } from '../../fileUpload/aws/s3.service';
 import { memoryStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
