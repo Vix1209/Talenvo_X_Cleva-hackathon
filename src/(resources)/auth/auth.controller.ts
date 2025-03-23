@@ -109,9 +109,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify email token' })
   async verifyEmail(
     @Body() dto: VerifyEmailDto,
-    @Query('email') email: string,
   ) {
-    await this.authService.verifyEmailToken(dto, email);
+    await this.authService.verifyEmailToken(dto);
     return { message: 'Email verified successfully' };
   }
 

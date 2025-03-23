@@ -316,14 +316,11 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  async verifyEmailToken(
-    verifyEmailDto: VerifyEmailDto,
-    email: string,
-  ): Promise<User> {
+  async verifyEmailToken(verifyEmailDto: VerifyEmailDto): Promise<User> {
     const user = await this.userRepository.findOne({
       where: {
         verificationToken: verifyEmailDto.verificationToken,
-        email: email,
+        email: verifyEmailDto.email,
       },
     });
 
@@ -338,7 +335,7 @@ export class AuthService {
       savedUser = await this.userRepository.save(user);
       if (savedUser) {
         await this.mailService.sendPasswordAfterVerifyingEmail(
-          email,
+          verifyEmailDto.email,
           user,
           true,
         );
