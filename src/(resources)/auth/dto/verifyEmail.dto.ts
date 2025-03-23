@@ -18,11 +18,13 @@ export class VerifyEmailDto {
   @IsEmail()
   email: string;
 }
+
 export class ResendVerifyEmailDto {
   @ApiProperty({
     example: 'snkjrsc@gmail.com',
     description: 'The valid user email',
   })
+  @IsNotEmpty()
   @IsEmail()
   email: string;
 }

@@ -115,7 +115,6 @@ export class AuthController {
   @Post('resend-verification-token')
   @ApiOperation({ summary: 'Resend email verification token' })
   async resendVerifyEmailToken(@Body() dto: ResendVerifyEmailDto) {
-    await this.authService.resendVerifyEmailToken(dto);
     return await this.authService.resendVerifyEmailToken(dto);
   }
 
