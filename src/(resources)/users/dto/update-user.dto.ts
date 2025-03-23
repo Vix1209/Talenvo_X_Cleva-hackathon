@@ -149,12 +149,7 @@ export class StudentProfileResponseDto {
 
 // ------------------ Teacher Profile DTOs ------------------ //
 export class CreateTeacherProfileDto {
-  @ApiPropertyOptional({
-    description: 'Profile picture URL',
-    example: 'https://example.com/images/teacher.jpg',
-  })
   @IsOptional()
-  @IsString()
   profilePicture?: string;
 
   @ApiPropertyOptional({
