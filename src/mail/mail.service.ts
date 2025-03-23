@@ -86,11 +86,11 @@ export class MailService {
   ) {
     const mailOptions = {
       to: email,
-      subject: 'Email Verified',
+      subject: 'Verification Token Resent',
       template: './html_templates',
       context: {
         name: `${user.firstName} ${user.lastName}`,
-        token,
+        token: user.verificationToken || token,
         resendVerificationMail: isVerified,
       },
     };

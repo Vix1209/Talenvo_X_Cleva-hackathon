@@ -359,11 +359,20 @@ export class AuthService {
       );
     }
 
-    if (!user.isVerified && user.verificationToken) {
+    user.verificationToken = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
+    user.isVerified = false;
+    const savedUser = await this.userRepository.save(user);
+
+    if (
+      !user.isVerified &&
+      (user.verificationToken !== null || user.verificationToken !== undefined)
+    ) {
       await this.mailService.resendVerificationToken(
         verifyEmailDto.email,
-        user,
-        user.verificationToken,
+        savedUser,
+        savedUser.verificationToken!, // Non-null assertion
         true,
       );
     } else {
