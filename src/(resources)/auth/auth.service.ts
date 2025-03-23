@@ -359,14 +359,15 @@ export class AuthService {
       );
     }
 
-    if (!user.isVerified) {
+    if (!user.isVerified && user.verificationToken) {
       await this.mailService.resendVerificationToken(
         verifyEmailDto.email,
         user,
+        user.verificationToken,
         true,
       );
     } else {
-      return { message: 'Email is already verified', success: true };
+      throw new BadRequestException('Email is already verified');
     }
     return { message: 'Verification email resent to email.', success: true };
   }

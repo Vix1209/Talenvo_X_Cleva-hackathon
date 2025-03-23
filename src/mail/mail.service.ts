@@ -81,6 +81,7 @@ export class MailService {
   async resendVerificationToken(
     email: string,
     user: User,
+    token: string,
     isVerified: boolean,
   ) {
     const mailOptions = {
@@ -89,7 +90,7 @@ export class MailService {
       template: './html_templates',
       context: {
         name: `${user.firstName} ${user.lastName}`,
-        token: user.verificationToken,
+        token,
         resendVerificationMail: isVerified,
       },
     };
