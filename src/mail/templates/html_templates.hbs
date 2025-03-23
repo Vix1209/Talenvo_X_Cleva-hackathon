@@ -327,7 +327,51 @@
       style='margin-top: 20px; font-size: 0.9em; color: #777; text-align: center;'
     >
       Thank you,<br />
-      <strong>The Sketch2Finish FS Team</strong>
+      <strong>The Edulite Team</strong>
+    </p>
+  </div>
+{{/if}}
+
+{{#if resendVerificationMail}}
+  <div
+    style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto;'
+  >
+    <h2 style='color: #FF6600; text-align: center;'>Password Reset Request</h2>
+
+    <p>Hi there,
+      {{name}}!
+    </p>
+
+    <p>
+      You must have missed our last mail having your verification token. No
+      fear, here is it for you. Please copy the token and paste it in the
+      verification field to verify your email.
+    </p>
+
+    <div
+      style='background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center; position: relative;'
+    >
+      <span
+        id='verification-token'
+        style='font-family: monospace; font-size: 16px; font-weight: bold; color: #333;'
+      >{{token}}</span>
+
+      <br />
+      <hr />
+
+      <div
+        style='background-color: #f7f7f7; padding: 15px; border-radius: 4px; margin: 20px 0; text-align: center;'
+      >
+        <p style='margin-top: 10px; font-size: 12px; color: #666;'>(Select the
+          token and press Ctrl+C or Cmd+C to copy)</p>
+      </div>
+    </div>
+
+    <p
+      style='margin-top: 20px; font-size: 0.9em; color: #777; text-align: center;'
+    >
+      Thank you,<br />
+      <strong>The Edulite Team</strong>
     </p>
   </div>
 {{/if}}

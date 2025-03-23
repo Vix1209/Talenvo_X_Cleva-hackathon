@@ -22,7 +22,7 @@ import { MailService } from 'src/mail/mail.service';
 import { Role } from 'src/(resources)/role/entities/role.entity';
 
 import { EmailValidationException } from 'utils';
-import { VerifyEmailDto } from './dto/verifyEmail.dto';
+import { ResendVerifyEmailDto, VerifyEmailDto } from './dto/verifyEmail.dto';
 import {
   AdminProfile,
   StudentProfile,
@@ -342,6 +342,33 @@ export class AuthService {
       }
     }
     return savedUser;
+  }
+
+  async resendVerifyEmailToken(
+    verifyEmailDto: ResendVerifyEmailDto,
+  ): Promise<{ message: string; success: boolean }> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: verifyEmailDto.email,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        `User with email, ${verifyEmailDto.email} not found`,
+      );
+    }
+
+    if (!user.isVerified) {
+      await this.mailService.resendVerificationToken(
+        verifyEmailDto.email,
+        user,
+        true,
+      );
+    } else {
+      return { message: 'Email is already verified', success: true };
+    }
+    return { message: 'Verification email resent to email.', success: true };
   }
 
   async verifyResetToken(resetTokenDto: ResetTokenDto): Promise<User> {

@@ -78,6 +78,25 @@ export class MailService {
     await this.mailerService.sendMail(mailOptions);
   }
 
+  async resendVerificationToken(
+    email: string,
+    user: User,
+    isVerified: boolean,
+  ) {
+    const mailOptions = {
+      to: email,
+      subject: 'Email Verified',
+      template: './html_templates',
+      context: {
+        name: `${user.firstName} ${user.lastName}`,
+        token: user.verificationToken,
+        resendVerificationMail: isVerified,
+      },
+    };
+
+    await this.mailerService.sendMail(mailOptions);
+  }
+
   async sendResetTokenConfirmation(
     email: string,
     user: User,

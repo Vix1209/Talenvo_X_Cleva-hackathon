@@ -25,7 +25,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
 import { AuthGuard } from '@nestjs/passport';
-import { VerifyEmailDto } from './dto/verifyEmail.dto';
+import { ResendVerifyEmailDto, VerifyEmailDto } from './dto/verifyEmail.dto';
 import { ResetTokenDto } from './dto/reset-token.dto';
 
 @GlobalApiResponse()
@@ -107,11 +107,16 @@ export class AuthController {
 
   @Post('verify')
   @ApiOperation({ summary: 'Verify email token' })
-  async verifyEmail(
-    @Body() dto: VerifyEmailDto,
-  ) {
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
     await this.authService.verifyEmailToken(dto);
     return { message: 'Email verified successfully' };
+  }
+
+  @Post('resend-verification-token')
+  @ApiOperation({ summary: 'Resend email verification token' })
+  async resendVerifyEmailToken(@Body() dto: ResendVerifyEmailDto) {
+    await this.authService.resendVerifyEmailToken(dto);
+    return await this.authService.resendVerifyEmailToken(dto);
   }
 
   @Post('verify-reset-token')
