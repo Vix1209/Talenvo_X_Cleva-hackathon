@@ -359,7 +359,11 @@ export class AuthService {
       );
     }
 
-    if (!user.isVerified && user.verificationToken) {
+    if (user.verificationToken == null) {
+      throw new BadRequestException('Email verification token is not set');
+    }
+
+    if (!user.isVerified) {
       await this.mailService.resendVerificationToken(
         verifyEmailDto.email,
         user,
