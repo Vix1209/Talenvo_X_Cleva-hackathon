@@ -55,14 +55,6 @@ export class CreateStudentProfileDto {
 
 export class UpdateStudentProfileDto {
   @ApiPropertyOptional({
-    description: 'Profile picture URL',
-    example: 'https://example.com/images/profile.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
-  @ApiPropertyOptional({
     description: 'Student grade level',
     example: '10th Grade',
   })
@@ -117,10 +109,6 @@ export class StudentProfileResponseDto {
 
   @IsOptional()
   @IsString()
-  profilePicture?: string;
-
-  @IsOptional()
-  @IsString()
   gradeLevel?: string;
 
   @IsOptional()
@@ -149,9 +137,6 @@ export class StudentProfileResponseDto {
 
 // ------------------ Teacher Profile DTOs ------------------ //
 export class CreateTeacherProfileDto {
-  @IsOptional()
-  profilePicture?: string;
-
   @ApiPropertyOptional({
     description: 'Teacher biography',
     example: 'Experienced math teacher with 10+ years in secondary education',
@@ -210,14 +195,6 @@ export class CreateTeacherProfileDto {
 }
 
 export class UpdateTeacherProfileDto {
-  @ApiPropertyOptional({
-    description: 'Profile picture URL',
-    example: 'https://example.com/images/teacher.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
   @ApiPropertyOptional({
     description: 'Teacher biography',
     example: 'Experienced math teacher with 10+ years in secondary education',
@@ -278,10 +255,6 @@ export class UpdateTeacherProfileDto {
 export class TeacherProfileResponseDto {
   @IsUUID()
   id: string;
-
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
 
   @IsOptional()
   @IsString()
