@@ -49,10 +49,17 @@ export class CreateCourseDto {
   @IsString({ each: true })
   topics: string[];
 
-  @ApiProperty({ description: 'Duration of the course', example: '100' })
-  @IsString()
-  @IsNotEmpty()
-  duration: string;
+  @IsOptional()
+  duration?: string;
+
+  @IsOptional()
+  width?: number;
+
+  @IsOptional()
+  height?: number;
+
+  @IsOptional()
+  codec?: string;
 
   @ApiProperty({
     description: 'Category ID of the course',

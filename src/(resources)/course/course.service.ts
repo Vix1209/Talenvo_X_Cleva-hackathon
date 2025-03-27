@@ -33,8 +33,25 @@ import {
   UpdateProgressDto,
 } from './dto/course-progress.dto';
 import { S3Service } from 'src/fileUpload/aws/s3.service';
-import * as path from 'path';
+import * as ffprobe from 'ffprobe';
+import * as ffprobeStatic from 'ffprobe-static';
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+interface FFProbeStream {
+  codec_type: string;
+  codec_name?: string;
+  width?: number;
+  height?: number;
+}
+
+interface FFProbeInfo {
+  streams: FFProbeStream[];
+  format: {
+    duration: string;
+  };
+}
 
 @Injectable()
 export class CourseService {
@@ -51,6 +68,57 @@ export class CourseService {
     private readonly s3Service: S3Service,
   ) {}
 
+  private async extractMetadata(file: Express.Multer.File): Promise<{
+    duration: string;
+    width?: number;
+    height?: number;
+    codec?: string;
+  }> {
+    // Create temporary file for ffprobe to analyze
+    const tempPath = path.join(os.tmpdir(), `video-${Date.now()}`);
+    fs.writeFileSync(tempPath, file.buffer);
+
+    try {
+      const info = await ffprobe(tempPath, { path: ffprobeStatic.path });
+
+      const ffprobeInfo = info as unknown as FFProbeInfo;
+
+      const videoStream: FFProbeStream | undefined = ffprobeInfo.streams.find(
+        (s: FFProbeStream) => s.codec_type === 'video',
+      );
+
+      // Delete temp file
+      fs.unlinkSync(tempPath);
+
+      if (!videoStream) {
+        return { duration: '0' };
+      }
+
+      // Format duration as HH:MM:SS
+      const durationSecs = parseFloat(ffprobeInfo.format.duration);
+      const hours = Math.floor(durationSecs / 3600);
+      const minutes = Math.floor((durationSecs % 3600) / 60);
+      const seconds = Math.floor(durationSecs % 60);
+
+      const formattedDuration = [
+        hours.toString().padStart(2, '0'),
+        minutes.toString().padStart(2, '0'),
+        seconds.toString().padStart(2, '0'),
+      ].join(':');
+
+      return {
+        duration: formattedDuration,
+        width: videoStream.width,
+        height: videoStream.height,
+        codec: videoStream.codec_name,
+      };
+    } catch (error) {
+      console.error('Failed to extract video metadata:', error);
+      // Return a default value if extraction fails
+      return { duration: '00:10:00' }; // Default 10 minutes
+    }
+  }
+
   // Core Course Methods
   async createCourse(
     createCourseDto: CreateCourseDto,
@@ -62,7 +130,16 @@ export class CourseService {
         throw new BadRequestException('Video file is required');
       }
 
+      // Extract video metadata
+      const { duration, width, height, codec } =
+        await this.extractMetadata(video);
+
       try {
+        createCourseDto.duration = duration;
+        createCourseDto.width = width;
+        createCourseDto.height = height;
+        createCourseDto.codec = codec;
+
         // Generate a temporary ID for tracking this upload
         const uploadId = Date.now().toString();
         console.log(`Starting video upload process (ID: ${uploadId})`);
@@ -183,6 +260,68 @@ export class CourseService {
       .leftJoinAndSelect('course.comments', 'comments')
       .leftJoinAndSelect('course.quizzes', 'quizzes')
       .leftJoinAndSelect('course.additionalResources', 'additionalResources');
+
+    // Apply search filter if provided
+    if (search) {
+      query.andWhere(
+        '(course.title LIKE :search OR course.description LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Apply category filter if provided
+    if (categoryId) {
+      query.andWhere('course.categoryId = :categoryId', { categoryId });
+    }
+
+    // Apply sorting
+    const validSortColumns = [
+      'title',
+      'createdAt',
+      'updatedAt',
+      'downloadCount',
+    ];
+
+    // Default to createdAt if sortBy is not valid
+    const actualSortBy = validSortColumns.includes(sortBy)
+      ? sortBy
+      : 'createdAt';
+    query.orderBy(`course.${actualSortBy}`, sortOrder);
+
+    // Execute query with pagination
+    const [results, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      ...paginate(results, limit ?? 10, page ?? 1, totalPages),
+    };
+  }
+
+  async findAllByATeacher(queryOptions: QueryCourseDto = {}, userId: string) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      categoryId,
+      sortBy = 'createdAt',
+      sortOrder = SortOrder.DESC,
+    } = queryOptions;
+
+    // Create query builder
+    const query = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect('course.user', 'user')
+      .leftJoinAndSelect('course.category', 'category')
+      .leftJoinAndSelect('course.comments', 'comments')
+      .leftJoinAndSelect('course.quizzes', 'quizzes')
+      .leftJoinAndSelect('course.additionalResources', 'additionalResources')
+      .where('course.userId = :userId', { userId })
+      .andWhere('user.role = :role', { role: 'teacher' });
 
     // Apply search filter if provided
     if (search) {

@@ -8,7 +8,6 @@ import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from 'src/(resources)/role/entities/role.entity';
-import { User } from 'src/(resources)/users/entities/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

@@ -27,13 +27,13 @@ import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
 @GlobalApiResponse()
 @ApiExcludeController()
 @Controller({ path: 'admin/role', version: '1' })
+@UseGuards(JwtGuard, RolesGuard)
+@ApiBearerAuth('JWT')
+@Roles('admin')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
   @Post()
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('admin')
   @ApiOperation({ summary: 'Create role' })
   async create(@Body() createRoleDto: CreateRoleDto) {
     const data = await this.roleService.create(createRoleDto);
@@ -44,9 +44,6 @@ export class RoleController {
   }
 
   @Get()
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('admin')
   @ApiOperation({ summary: 'Get all roles' })
   @ApiQuery({
     name: 'page',
@@ -83,9 +80,6 @@ export class RoleController {
   }
 
   @Get(':id')
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('admin')
   @ApiOperation({ summary: 'Get single role' })
   async findOne(@Param('id') id: string) {
     const data = await this.roleService.findOne(+id);
@@ -96,9 +90,6 @@ export class RoleController {
   }
 
   @Patch(':id/update')
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('admin')
   @ApiOperation({ summary: 'Update role' })
   async update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     const data = await this.roleService.update(+id, updateRoleDto);
@@ -109,18 +100,12 @@ export class RoleController {
   }
 
   @Delete(':id/delete')
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('admin')
   @ApiOperation({ summary: 'Delete role' })
   async remove(@Param('id') id: string) {
     return await this.roleService.remove(+id);
   }
 
   @Put(':id/restore')
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('admin')
   @ApiOperation({ summary: 'Restore role' })
   async restore(@Param('id') id: string) {
     return await this.roleService.restore(+id);

@@ -73,6 +73,15 @@ export class Course {
   @Column()
   duration: string;
 
+  @Column()
+  width: number;
+
+  @Column()
+  height: number;
+
+  @Column()
+  codec: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

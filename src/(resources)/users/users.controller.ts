@@ -31,9 +31,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtGuard, RolesGuard)
+  @ApiBearerAuth('JWT')
   @Roles('admin')
-  @ApiOperation({ summary: 'Get all User accounts' })
+  @ApiOperation({ summary: 'Get all User accounts - (Admin)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -80,7 +81,7 @@ export class UsersController {
   @UseGuards(JwtGuard)
   @ApiBearerAuth('JWT')
   @UseInterceptors(FileInterceptor('profileImage'))
-  @ApiOperation({ summary: 'Update profile image' })
+  @ApiOperation({ summary: 'Update profile image - (All)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -111,7 +112,7 @@ export class UsersController {
   @UseGuards(JwtGuard, RolesGuard)
   @ApiBearerAuth('JWT')
   @Roles('admin')
-  @ApiOperation({ summary: 'Deactivate or activate an account' })
+  @ApiOperation({ summary: 'Deactivate or activate an account - (Admin)' })
   async deactivateUser(@Param('id') id: string) {
     const data = await this.usersService.toggleAccountStatus(id);
     return {
@@ -124,7 +125,7 @@ export class UsersController {
   @UseGuards(JwtGuard, RolesGuard)
   @ApiBearerAuth('JWT')
   @Roles('admin')
-  @ApiOperation({ summary: 'Delete an account' })
+  @ApiOperation({ summary: 'Delete an account - (Admin)' })
   async remove(@Param('id') id: string) {
     const data = await this.usersService.deleteAccount(id);
     return {
@@ -137,7 +138,7 @@ export class UsersController {
   @UseGuards(JwtGuard, RolesGuard)
   @ApiBearerAuth('JWT')
   @Roles('admin')
-  @ApiOperation({ summary: 'Restore an account' })
+  @ApiOperation({ summary: 'Restore an account - (Admin)' })
   async restore(@Param('id') id: string) {
     const data = await this.usersService.restoreAccount(id);
     return {

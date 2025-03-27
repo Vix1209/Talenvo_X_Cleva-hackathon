@@ -68,31 +68,31 @@ export class CourseController {
   // Category Endpoints ---------------------------------------------------------------------
 
   @Post('categories')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Course Categories')
-  @ApiOperation({ summary: 'Create a new course category' })
+  @ApiOperation({ summary: 'Create a new course category - (Teachers)' })
   async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
     return await this.courseService.createCategory(createCategoryDto);
   }
 
   @Get('categories')
   @ApiTags('Course Categories')
-  @ApiOperation({ summary: 'Get all course categories' })
+  @ApiOperation({ summary: 'Get all course categories - (All)' })
   async findAllCategories(): Promise<CategoryResponseDto[]> {
     return await this.courseService.findAllCategories();
   }
 
   @Get('categories/:id')
   @ApiTags('Course Categories')
-  @ApiOperation({ summary: 'Get a category by ID' })
+  @ApiOperation({ summary: 'Get a category by ID - (All)' })
   async findOneCategory(@Param('id') id: string): Promise<CategoryResponseDto> {
     return await this.courseService.findOneCategory(id);
   }
 
   @Patch('categories/:id')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Course Categories')
-  @ApiOperation({ summary: 'Update a category' })
+  @ApiOperation({ summary: 'Update a category - (Teachers)' })
   async updateCategory(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
@@ -101,9 +101,9 @@ export class CourseController {
   }
 
   @Delete('categories/:id')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Course Categories')
-  @ApiOperation({ summary: 'Delete a category' })
+  @ApiOperation({ summary: 'Delete a category - (Teachers)' })
   async removeCategory(@Param('id') id: string) {
     await this.courseService.removeCategory(id);
     return { message: 'Category deleted successfully' };
@@ -111,7 +111,7 @@ export class CourseController {
 
   @Get('by-category/:categoryId')
   @ApiTags('Course Categories')
-  @ApiOperation({ summary: 'Get courses by category' })
+  @ApiOperation({ summary: 'Get courses by category - (All)' })
   async getCoursesByCategory(@Param('categoryId') categoryId: string) {
     return await this.courseService.getCoursesByCategory(categoryId);
   }
@@ -120,10 +120,8 @@ export class CourseController {
 
   @Post()
   @ApiTags('Course Management')
-  @UseGuards(JwtGuard, RolesGuard)
-  @ApiBearerAuth('JWT')
-  @Roles('teacher', 'admin')
-  @ApiOperation({ summary: 'Create a new course' })
+  @Roles('teacher')
+  @ApiOperation({ summary: 'Create a new course - (Teachers)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('video', {
@@ -162,7 +160,7 @@ export class CourseController {
           type: 'string',
           format: 'binary',
           description:
-            'Course video file (mp4, mov, avi, webm, mkv). Maximum size: 5GB',
+            'Course video file (mp4, mov, avi, webm, mkv). Maximum size: 500mb',
           example: 'video.mp4',
         },
         title: {
@@ -214,7 +212,8 @@ export class CourseController {
   @Get()
   @ApiTags('Course Management')
   @ApiOperation({
-    summary: 'Get all courses with filtering, sorting, and pagination',
+    summary:
+      'Get all courses with filtering, sorting, and pagination - (Students)',
   })
   @ApiQuery({
     name: 'page',
@@ -259,17 +258,71 @@ export class CourseController {
     return await this.courseService.findAll(queryOptions);
   }
 
+  @Get('/teacher')
+  @ApiTags('Course Management')
+  @Roles('teacher')
+  @ApiOperation({
+    summary:
+      'Get all courses with filtering, sorting, and pagination - (Teachers)',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search courses by title or description',
+  })
+  @ApiQuery({
+    name: 'categoryId',
+    required: false,
+    type: String,
+    description: 'Filter courses by category ID',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description:
+      'Field to sort by (title, createdAt, updatedAt, downloadCount)',
+    enum: ['title', 'createdAt', 'updatedAt', 'downloadCount'],
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    type: String,
+    description: 'Sort order (ASC or DESC)',
+    enum: ['ASC', 'DESC'],
+  })
+  async findAllByATeacher(
+    @Query() queryOptions: QueryCourseDto,
+    @Req() request: Request & { user: { id: string } },
+  ) {
+    const user = request.user.id;
+    return await this.courseService.findAllByATeacher(queryOptions, user);
+  }
+
   @Get(':id')
   @ApiTags('Course Management')
-  @ApiOperation({ summary: 'Get a course by ID' })
+  @ApiOperation({ summary: 'Get a course by ID - (All)' })
   async findOne(@Param('id') id: string) {
     return await this.courseService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Course Management')
-  @ApiOperation({ summary: 'Update a course' })
+  @ApiOperation({ summary: 'Update a course - (Teachers)' })
   async update(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
@@ -278,9 +331,9 @@ export class CourseController {
   }
 
   @Delete(':id')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Course Management')
-  @ApiOperation({ summary: 'Delete a course' })
+  @ApiOperation({ summary: 'Delete a course - (Teachers)' })
   async remove(@Param('id') id: string) {
     return await this.courseService.remove(id);
   }
@@ -288,9 +341,11 @@ export class CourseController {
   // Downloadable Resource Endpoints ---------------------------------------------------------------------------------------------------------------------------------------
 
   @Post(':courseId/toggle-download-state')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Courses - Downloadable Resources')
-  @ApiOperation({ summary: 'Make course downloadable or not' })
+  @ApiOperation({
+    summary: 'Make course downloadable or not - (Teachers)',
+  })
   async toggleCourseDownloadStatus(@Param('courseId') courseId: string) {
     const data = await this.courseService.toggleCourseDownloadStatus(courseId);
     return {
@@ -311,7 +366,7 @@ export class CourseController {
   })
   @ApiOperation({
     summary:
-      'Update course progress while the student is taking the course online',
+      'Update course progress while the student is taking the course online - (Students)',
   })
   async updateProgress(
     @Body() updateProgressDto: UpdateProgressDto,
@@ -327,7 +382,7 @@ export class CourseController {
   @Post('download')
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({
-    summary: 'Download a course for offline access',
+    summary: 'Download a course for offline access - (Students)',
     description:
       'Downloads a course for offline access. The client can provide storage information to validate if there is enough space available for the download.',
   })
@@ -343,7 +398,7 @@ export class CourseController {
   @Get('estimate-size/:courseId')
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({
-    summary: 'Estimate the size of a course for storage planning',
+    summary: 'Estimate the size of a course for storage planning - (Students)',
   })
   @ApiQuery({
     name: 'totalStorageUsed',
@@ -387,7 +442,7 @@ export class CourseController {
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({
     summary:
-      'Sync offline progress when the student is watching a video offline and then comes back online',
+      'Sync offline progress when the student is watching a video offline and then comes back online - (Students)',
   })
   async syncOfflineProgress(
     @Param('courseId') courseId: string,
@@ -401,7 +456,7 @@ export class CourseController {
 
   @Get('course-progress/user/:userId')
   @ApiTags('Courses - Course Progress and Offline Access')
-  @ApiOperation({ summary: 'Get all course progress for a user' })
+  @ApiOperation({ summary: 'Get all course progress for a user - (Students)' })
   async getUserCourseProgress(@Param('userId') userId: string) {
     return await this.courseService.getUserCourseProgress(userId);
   }
@@ -409,7 +464,7 @@ export class CourseController {
   @Get('course-progress/:courseId/user/:userId')
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({
-    summary: 'Get course progress for a specific user and course',
+    summary: 'Get course progress for a specific user and course - (Students)',
   })
   async getCourseProgressByUserAndCourse(
     @Param('userId') userId: string,
@@ -424,9 +479,9 @@ export class CourseController {
   // Quiz Endpoints
   @Post(':courseId/quizzes')
   @UseGuards(RolesGuard)
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Create a quiz for a course' })
+  @ApiOperation({ summary: 'Create a quiz for a course - (Teachers)' })
   async createQuiz(
     @Param('courseId') courseId: string,
     @Body() createQuizDto: CreateQuizDto,
@@ -437,14 +492,14 @@ export class CourseController {
 
   @Get(':courseId/quizzes')
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Get all quizzes for a course' })
+  @ApiOperation({ summary: 'Get all quizzes for a course - (All)' })
   async getQuizzes(@Param('courseId') courseId: string) {
     return await this.courseService.getQuizzes(courseId);
   }
 
   @Get('quizzes/:quizId')
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Get a specific quiz' })
+  @ApiOperation({ summary: 'Get a specific quiz - (All)' })
   async getQuiz(@Param('quizId') quizId: string) {
     return await this.courseService.getQuiz(quizId);
   }
@@ -453,7 +508,7 @@ export class CourseController {
   @UseGuards(RolesGuard)
   @Roles('teacher')
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Update a quiz' })
+  @ApiOperation({ summary: 'Update a quiz - (Teachers)' })
   async updateQuiz(
     @Param('quizId') quizId: string,
     @Body() updateQuizDto: UpdateQuizDto,
@@ -465,7 +520,7 @@ export class CourseController {
   @UseGuards(RolesGuard)
   @Roles('teacher')
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Delete a quiz' })
+  @ApiOperation({ summary: 'Delete a quiz - (Teachers)' })
   async deleteQuiz(@Param('quizId') quizId: string) {
     return await this.courseService.deleteQuiz(quizId);
   }
@@ -473,9 +528,9 @@ export class CourseController {
   // Quiz Submission Endpoints
   @Post('quizzes/submit')
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('student', 'admin')
+  @Roles('student')
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Submit a quiz answer' })
+  @ApiOperation({ summary: 'Submit a quiz answer - (Students)' })
   async submitQuiz(
     @Body() submitQuizDto: SubmitQuizDto,
     @Req() req: Request & { user: { id: string } },
@@ -488,10 +543,10 @@ export class CourseController {
 
   @Get('student/quiz-submissions')
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('student', 'admin')
+  @Roles('student')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({
-    summary: 'Get all quiz submissions for the logged-in student',
+    summary: 'Get all quiz submissions for the logged-in student - (Students)',
   })
   async getMyQuizSubmissions(@Req() req: Request & { user: { id: string } }) {
     if (!req.user) {
@@ -503,7 +558,7 @@ export class CourseController {
   @Get('quiz-submissions/:submissionId')
   @UseGuards(JwtGuard)
   @ApiTags('Courses - Quizzes')
-  @ApiOperation({ summary: 'Get a specific quiz submission' })
+  @ApiOperation({ summary: 'Get a specific quiz submission - (All)' })
   async getQuizSubmission(@Param('submissionId') submissionId: string) {
     return await this.courseService.getQuizSubmission(submissionId);
   }
@@ -511,7 +566,7 @@ export class CourseController {
   // Comment Endpoints
   @Post(':courseId/comments')
   @ApiTags('Courses - Comments')
-  @ApiOperation({ summary: 'Create a comment for a course' })
+  @ApiOperation({ summary: 'Create a comment for a course - (Students)' })
   async createComment(
     @Param('courseId') courseId: string,
     @Body() createCommentDto: CreateCommentDto,
@@ -526,14 +581,14 @@ export class CourseController {
 
   @Get(':courseId/comments')
   @ApiTags('Courses - Comments')
-  @ApiOperation({ summary: 'Get all comments for a course' })
+  @ApiOperation({ summary: 'Get all comments for a course - (All)' })
   async getComments(@Param('courseId') courseId: string) {
     return await this.courseService.getComments(courseId);
   }
 
   @Patch('comments/:commentId')
   @ApiTags('Courses - Comments')
-  @ApiOperation({ summary: 'Update a comment' })
+  @ApiOperation({ summary: 'Update a comment - (Students)' })
   async updateComment(
     @Param('commentId') commentId: string,
     @Body() updateCommentDto: UpdateCommentDto,
@@ -548,7 +603,7 @@ export class CourseController {
 
   @Delete('comments/:commentId')
   @ApiTags('Courses - Comments')
-  @ApiOperation({ summary: 'Delete a comment' })
+  @ApiOperation({ summary: 'Delete a comment - (All)' })
   async deleteComment(
     @Param('commentId') commentId: string,
     @Req() request: Request & { user: { id: string } },
@@ -558,9 +613,11 @@ export class CourseController {
 
   // Additional Resources Endpoints
   @Post(':courseId/additional-resources')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Courses - Additional Resources')
-  @ApiOperation({ summary: 'Add an additional resource to a course' })
+  @ApiOperation({
+    summary: 'Add an additional resource to a course - (Teachers)',
+  })
   async createResource(
     @Param('courseId') courseId: string,
     @Body() createResourceDto: CreateAdditionalResourceDto,
@@ -573,15 +630,17 @@ export class CourseController {
 
   @Get(':courseId/additional-resources')
   @ApiTags('Courses - Additional Resources')
-  @ApiOperation({ summary: 'Get all additional resources for a course' })
+  @ApiOperation({
+    summary: 'Get all additional resources for a course - (All)',
+  })
   async getResources(@Param('courseId') courseId: string) {
     return await this.courseService.getAdditionalResources(courseId);
   }
 
   @Patch('additional-resources/:resourceId')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Courses - Additional Resources')
-  @ApiOperation({ summary: 'Update an additional resource' })
+  @ApiOperation({ summary: 'Update an additional resource - (Teachers)' })
   async updateResource(
     @Param('resourceId') resourceId: string,
     @Body() updateResourceDto: UpdateAdditionalResourceDto,
@@ -595,9 +654,9 @@ export class CourseController {
   }
 
   @Delete('additional-resources/:resourceId')
-  @Roles('teacher', 'admin')
+  @Roles('teacher')
   @ApiTags('Courses - Additional Resources')
-  @ApiOperation({ summary: 'Delete an additional resource' })
+  @ApiOperation({ summary: 'Delete an additional resource - (Teachers)' })
   async deleteResource(
     @Param('resourceId') resourceId: string,
     @Req() request: Request & { user: { id: string } },
