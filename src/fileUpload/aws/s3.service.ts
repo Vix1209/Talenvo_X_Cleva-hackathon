@@ -10,8 +10,8 @@ import {
 } from '@aws-sdk/client-s3';
 import {
   CloudFrontClient,
-  CreateInvalidationCommand,
-  GetDistributionCommand,
+  // CreateInvalidationCommand,
+  // GetDistributionCommand,
 } from '@aws-sdk/client-cloudfront';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
@@ -174,34 +174,35 @@ export class S3Service {
       console.log('Starting multipart upload...');
 
       // Determine if we should force streaming for less-compatible formats
-      const shouldForceStreamingContent = (
-        mimeType: string,
-        filename: string,
-      ): boolean => {
-        const ext = filename.split('.').pop()?.toLowerCase();
+      // const shouldForceStreamingContent = (
+      //   mimeType: string,
+      //   filename: string,
+      // ): boolean => {
+      //   const ext = filename.split('.').pop()?.toLowerCase();
 
-        // These formats need special handling
-        if (
-          ext === 'mkv' ||
-          ext === 'avi' ||
-          mimeType === 'video/x-matroska' ||
-          mimeType === 'video/x-msvideo'
-        ) {
-          return true;
-        }
+      //   // These formats need special handling
+      //   if (
+      //     ext === 'mkv' ||
+      //     ext === 'avi' ||
+      //     mimeType === 'video/x-matroska' ||
+      //     mimeType === 'video/x-msvideo'
+      //   ) {
+      //     return true;
+      //   }
 
-        return false;
-      };
+      //   return false;
+      // };
 
-      const forceStreaming = shouldForceStreamingContent(
-        mimeType,
-        originalFilename,
-      );
+      // const forceStreaming = shouldForceStreamingContent(
+      //   mimeType,
+      //   originalFilename,
+      // );
 
       const createCommand = new CreateMultipartUploadCommand({
         Bucket: this.bucket,
         Key: key,
-        ContentType: forceStreaming ? 'video/mp4' : mimeType, // Force video/mp4 for MKV files
+        // ContentType: forceStreaming ? 'video/mp4' : mimeType, // Force video/mp4 for MKV files
+        ContentType: mimeType,
         CacheControl: 'max-age=31536000', // Cache for 1 year#
         ContentDisposition: 'inline',
       });

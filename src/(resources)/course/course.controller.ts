@@ -54,10 +54,6 @@ import { memoryStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const uploadPath = path.join(process.cwd(), 'temp-uploads');
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
