@@ -21,6 +21,7 @@ import {
   AdditionalResourceService,
   CourseProgressService,
   StorageCalculatorService,
+  MainCourseService,
 } from './services';
 import { Role } from '../role/entities/role.entity';
 import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
@@ -57,6 +58,7 @@ import { AwsModule } from '../../fileUpload/aws/aws.module';
     StorageCalculatorService,
     CloudinaryUploadService,
     S3Service,
+    MainCourseService,
   ],
   exports: [CourseService],
 })

@@ -5,3 +5,4 @@ export * from './comment.service';
 export * from './additional-resource.service';
 export * from './course-progress.service';
 export * from './storage-calculator.service';
+export * from './mainCourse.service';
