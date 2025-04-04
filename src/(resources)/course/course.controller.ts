@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CourseService } from './course.service';
+import { CourseService } from './services';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CreateQuizDto, UpdateQuizDto } from './dto/quiz.dto';
@@ -51,15 +51,28 @@ import {
 } from './dto/category.dto';
 import { QueryCourseDto } from './dto/query-course.dto';
 import { memoryStorage } from 'multer';
-import * as path from 'path';
-import * as fs from 'fs';
-
+import {
+  AdditionalResourceService,
+  CategoryService,
+  CommentService,
+  CourseProgressService,
+  DownloadableResourceService,
+  QuizService,
+} from './services';
 
 @Controller({ path: 'courses', version: '1' })
 @UseGuards(JwtGuard, RolesGuard)
 @ApiBearerAuth('JWT')
 export class CourseController {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(
+    private readonly courseService: CourseService,
+    private readonly courseProgressService: CourseProgressService,
+    private readonly downloadableResourceService: DownloadableResourceService,
+    private readonly quizService: QuizService,
+    private readonly commentService: CommentService,
+    private readonly additionalResourceService: AdditionalResourceService,
+    private readonly categoryService: CategoryService,
+  ) {}
 
   // Category Endpoints ---------------------------------------------------------------------
 
@@ -68,21 +81,21 @@ export class CourseController {
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Create a new course category - (Teachers)' })
   async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
-    return await this.courseService.createCategory(createCategoryDto);
+    return await this.categoryService.createCategory(createCategoryDto);
   }
 
   @Get('categories')
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Get all course categories - (All)' })
   async findAllCategories(): Promise<CategoryResponseDto[]> {
-    return await this.courseService.findAllCategories();
+    return await this.categoryService.findAllCategories();
   }
 
   @Get('categories/:id')
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Get a category by ID - (All)' })
   async findOneCategory(@Param('id') id: string): Promise<CategoryResponseDto> {
-    return await this.courseService.findOneCategory(id);
+    return await this.categoryService.findOneCategory(id);
   }
 
   @Patch('categories/:id')
@@ -93,7 +106,7 @@ export class CourseController {
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return await this.courseService.updateCategory(id, updateCategoryDto);
+    return await this.categoryService.updateCategory(id, updateCategoryDto);
   }
 
   @Delete('categories/:id')
@@ -101,7 +114,7 @@ export class CourseController {
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Delete a category - (Teachers)' })
   async removeCategory(@Param('id') id: string) {
-    await this.courseService.removeCategory(id);
+    await this.categoryService.removeCategory(id);
     return { message: 'Category deleted successfully' };
   }
 
@@ -109,14 +122,14 @@ export class CourseController {
   @ApiTags('Course Categories')
   @ApiOperation({ summary: 'Get courses by category - (All)' })
   async getCoursesByCategory(@Param('categoryId') categoryId: string) {
-    return await this.courseService.getCoursesByCategory(categoryId);
+    return await this.categoryService.getCoursesByCategory(categoryId);
   }
 
   // Course Endpoints ---------------------------------------------------------------------
 
   @Post()
   @ApiTags('Course Management')
-  @Roles('teacher')
+  @Roles('teacher', 'admin')
   @ApiOperation({ summary: 'Create a new course - (Teachers)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -343,7 +356,10 @@ export class CourseController {
     summary: 'Make course downloadable or not - (Teachers)',
   })
   async toggleCourseDownloadStatus(@Param('courseId') courseId: string) {
-    const data = await this.courseService.toggleCourseDownloadStatus(courseId);
+    const data =
+      await this.downloadableResourceService.toggleCourseDownloadStatus(
+        courseId,
+      );
     return {
       data,
       status: 'success',
@@ -372,7 +388,7 @@ export class CourseController {
     const userId = request.user.id;
     updateProgressDto.userId = userId;
     updateProgressDto.courseId = courseId;
-    return await this.courseService.updateProgress(updateProgressDto);
+    return await this.courseProgressService.updateProgress(updateProgressDto);
   }
 
   @Post('download')
@@ -388,7 +404,7 @@ export class CourseController {
   ) {
     const userId = request.user.id;
     downloadCourseDto.userId = userId;
-    return await this.courseService.downloadCourse(downloadCourseDto);
+    return await this.courseProgressService.downloadCourse(downloadCourseDto);
   }
 
   @Get('estimate-size/:courseId')
@@ -413,7 +429,8 @@ export class CourseController {
     @Query('totalStorageUsed') totalStorageUsed?: number,
     @Query('maxStorageAllowed') maxStorageAllowed?: number,
   ) {
-    const storageInfo = await this.courseService.estimateCourseSize(courseId);
+    const storageInfo =
+      await this.courseProgressService.estimateCourseSize(courseId);
 
     // Update with client-provided storage information if available
     if (totalStorageUsed !== undefined) {
@@ -447,14 +464,16 @@ export class CourseController {
   ) {
     syncOfflineProgressDto.courseId = courseId;
     syncOfflineProgressDto.userId = request.user.id;
-    return await this.courseService.syncOfflineProgress(syncOfflineProgressDto);
+    return await this.courseProgressService.syncOfflineProgress(
+      syncOfflineProgressDto,
+    );
   }
 
   @Get('course-progress/user/:userId')
   @ApiTags('Courses - Course Progress and Offline Access')
   @ApiOperation({ summary: 'Get all course progress for a user - (Students)' })
   async getUserCourseProgress(@Param('userId') userId: string) {
-    return await this.courseService.getUserCourseProgress(userId);
+    return await this.courseProgressService.getUserCourseProgress(userId);
   }
 
   @Get('course-progress/:courseId/user/:userId')
@@ -466,7 +485,7 @@ export class CourseController {
     @Param('userId') userId: string,
     @Param('courseId') courseId: string,
   ) {
-    return await this.courseService.getCourseProgressByUserAndCourse(
+    return await this.courseProgressService.getCourseProgressByUserAndCourse(
       userId,
       courseId,
     );
@@ -483,21 +502,21 @@ export class CourseController {
     @Body() createQuizDto: CreateQuizDto,
   ) {
     createQuizDto.courseId = courseId;
-    return await this.courseService.createQuiz(createQuizDto);
+    return await this.quizService.createQuiz(createQuizDto);
   }
 
   @Get(':courseId/quizzes')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Get all quizzes for a course - (All)' })
   async getQuizzes(@Param('courseId') courseId: string) {
-    return await this.courseService.getQuizzes(courseId);
+    return await this.quizService.getQuizzes(courseId);
   }
 
   @Get('quizzes/:quizId')
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Get a specific quiz - (All)' })
   async getQuiz(@Param('quizId') quizId: string) {
-    return await this.courseService.getQuiz(quizId);
+    return await this.quizService.getQuiz(quizId);
   }
 
   @Patch('quizzes/:quizId')
@@ -509,7 +528,7 @@ export class CourseController {
     @Param('quizId') quizId: string,
     @Body() updateQuizDto: UpdateQuizDto,
   ) {
-    return await this.courseService.updateQuiz(quizId, updateQuizDto);
+    return await this.quizService.updateQuiz(quizId, updateQuizDto);
   }
 
   @Delete('quizzes/:quizId')
@@ -518,7 +537,7 @@ export class CourseController {
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Delete a quiz - (Teachers)' })
   async deleteQuiz(@Param('quizId') quizId: string) {
-    return await this.courseService.deleteQuiz(quizId);
+    return await this.quizService.deleteQuiz(quizId);
   }
 
   // Quiz Submission Endpoints
@@ -534,7 +553,7 @@ export class CourseController {
     if (!req.user) {
       throw new UnauthorizedException('User not authenticated');
     }
-    return await this.courseService.submitQuiz(submitQuizDto, req.user.id);
+    return await this.quizService.submitQuiz(submitQuizDto, req.user.id);
   }
 
   @Get('student/quiz-submissions')
@@ -548,7 +567,7 @@ export class CourseController {
     if (!req.user) {
       throw new UnauthorizedException('User not authenticated');
     }
-    return await this.courseService.getStudentQuizSubmissions(req.user.id);
+    return await this.quizService.getStudentQuizSubmissions(req.user.id);
   }
 
   @Get('quiz-submissions/:submissionId')
@@ -556,7 +575,7 @@ export class CourseController {
   @ApiTags('Courses - Quizzes')
   @ApiOperation({ summary: 'Get a specific quiz submission - (All)' })
   async getQuizSubmission(@Param('submissionId') submissionId: string) {
-    return await this.courseService.getQuizSubmission(submissionId);
+    return await this.quizService.getQuizSubmission(submissionId);
   }
 
   // Comment Endpoints
@@ -569,7 +588,7 @@ export class CourseController {
     @Req() request: Request & { user: { id: string } },
   ) {
     createCommentDto.courseId = courseId;
-    return await this.courseService.createComment(
+    return await this.commentService.createComment(
       createCommentDto,
       request.user.id,
     );
@@ -579,7 +598,7 @@ export class CourseController {
   @ApiTags('Courses - Comments')
   @ApiOperation({ summary: 'Get all comments for a course - (All)' })
   async getComments(@Param('courseId') courseId: string) {
-    return await this.courseService.getComments(courseId);
+    return await this.commentService.getComments(courseId);
   }
 
   @Patch('comments/:commentId')
@@ -590,7 +609,7 @@ export class CourseController {
     @Body() updateCommentDto: UpdateCommentDto,
     @Req() request: Request & { user: { id: string } },
   ) {
-    return await this.courseService.updateComment(
+    return await this.commentService.updateComment(
       commentId,
       updateCommentDto,
       request.user.id,
@@ -604,7 +623,7 @@ export class CourseController {
     @Param('commentId') commentId: string,
     @Req() request: Request & { user: { id: string } },
   ) {
-    return await this.courseService.deleteComment(commentId, request.user.id);
+    return await this.commentService.deleteComment(commentId, request.user.id);
   }
 
   // Additional Resources Endpoints
@@ -621,7 +640,9 @@ export class CourseController {
   ) {
     createResourceDto.courseId = courseId;
     createResourceDto.userId = request.user.id;
-    return await this.courseService.createAdditionalResource(createResourceDto);
+    return await this.additionalResourceService.createAdditionalResource(
+      createResourceDto,
+    );
   }
 
   @Get(':courseId/additional-resources')
@@ -630,7 +651,9 @@ export class CourseController {
     summary: 'Get all additional resources for a course - (All)',
   })
   async getResources(@Param('courseId') courseId: string) {
-    return await this.courseService.getAdditionalResources(courseId);
+    return await this.additionalResourceService.getAdditionalResources(
+      courseId,
+    );
   }
 
   @Patch('additional-resources/:resourceId')
@@ -642,7 +665,7 @@ export class CourseController {
     @Body() updateResourceDto: UpdateAdditionalResourceDto,
     @Req() request: Request & { user: { id: string } },
   ) {
-    return await this.courseService.updateAdditionalResource(
+    return await this.additionalResourceService.updateAdditionalResource(
       resourceId,
       updateResourceDto,
       request.user.id,
@@ -657,7 +680,7 @@ export class CourseController {
     @Param('resourceId') resourceId: string,
     @Req() request: Request & { user: { id: string } },
   ) {
-    return await this.courseService.deleteAdditionalResource(
+    return await this.additionalResourceService.deleteAdditionalResource(
       resourceId,
       request.user.id,
     );

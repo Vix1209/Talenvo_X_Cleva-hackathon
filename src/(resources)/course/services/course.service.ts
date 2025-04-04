@@ -9,32 +9,32 @@ import { Repository } from 'typeorm';
 import { WebsocketService } from 'src/websockets/websockets.service';
 import { CategoryService } from './category.service';
 import { S3Service } from 'src/fileUpload/aws/s3.service';
-import ffprobe from 'ffprobe';
-import * as ffprobeStatic from 'ffprobe-static';
+// import ffprobe from 'ffprobe';
+// import * as ffprobeStatic from 'ffprobe-static';
 import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+// import * as os from 'os';
+// import * as path from 'path';
 import { CreateCourseDto } from '../dto/create-course.dto';
 import { QueryCourseDto, SortOrder } from '../dto/query-course.dto';
 import { paginate } from 'utils/pagination.utils';
 import { UpdateCourseDto } from '../dto/update-course.dto';
 
-interface FFProbeStream {
-  codec_type: string;
-  codec_name?: string;
-  width?: number;
-  height?: number;
-}
+// interface FFProbeStream {
+//   codec_type: string;
+//   codec_name?: string;
+//   width?: number;
+//   height?: number;
+// }
 
-interface FFProbeInfo {
-  streams: FFProbeStream[];
-  format: {
-    duration: string;
-  };
-}
+// interface FFProbeInfo {
+//   streams: FFProbeStream[];
+//   format: {
+//     duration: string;
+//   };
+// }
 
 @Injectable()
-export class MainCourseService {
+export class CourseService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
@@ -42,66 +42,66 @@ export class MainCourseService {
     private readonly categoryService: CategoryService,
     private readonly s3Service: S3Service,
   ) {}
-  private async extractMetadata(file: Express.Multer.File): Promise<{
-    duration: string;
-    width?: number;
-    height?: number;
-    codec?: string;
-  }> {
-    // Create temporary file for ffprobe to analyze
-    const tempPath = path.join(os.tmpdir(), `video-${Date.now()}`);
-    fs.writeFileSync(tempPath, file.buffer);
+  // private async extractMetadata(file: Express.Multer.File): Promise<{
+  //   duration: string;
+  //   width?: number;
+  //   height?: number;
+  //   codec?: string;
+  // }> {
+  //   // Create temporary file for ffprobe to analyze
+  //   const tempPath = path.join(os.tmpdir(), `video-${Date.now()}`);
+  //   fs.writeFileSync(tempPath, file.buffer);
 
-    try {
-      const info = await ffprobe(tempPath, { path: ffprobeStatic.path });
+  //   try {
+  //     const info = await ffprobe(tempPath, { path: ffprobeStatic.path });
 
-      // Delete temp file immediately after analysis
-      fs.unlinkSync(tempPath);
+  //     // Delete temp file immediately after analysis
+  //     fs.unlinkSync(tempPath);
 
-      const ffprobeInfo = info as unknown as FFProbeInfo;
+  //     const ffprobeInfo = info as unknown as FFProbeInfo;
 
-      // Add defensive checks for the format property
-      if (!ffprobeInfo?.format) {
-        console.warn('Video format information is missing');
-        return { duration: '00:10:00' }; // Default 10 minutes
-      }
+  //     // Add defensive checks for the format property
+  //     if (!ffprobeInfo?.format) {
+  //       console.warn('Video format information is missing');
+  //       return { duration: '00:10:00' }; // Default 10 minutes
+  //     }
 
-      const videoStream: FFProbeStream | undefined = ffprobeInfo.streams?.find(
-        (s: FFProbeStream) => s.codec_type === 'video',
-      );
+  //     const videoStream: FFProbeStream | undefined = ffprobeInfo.streams?.find(
+  //       (s: FFProbeStream) => s.codec_type === 'video',
+  //     );
 
-      if (!videoStream) {
-        console.warn('No video stream found in the file');
-        return { duration: '00:10:00' }; // Default 10 minutes
-      }
+  //     if (!videoStream) {
+  //       console.warn('No video stream found in the file');
+  //       return { duration: '00:10:00' }; // Default 10 minutes
+  //     }
 
-      // Format duration as HH:MM:SS with defensive check
-      const durationSecs = ffprobeInfo.format.duration
-        ? parseFloat(ffprobeInfo.format.duration)
-        : 600; // Default 10 minutes in seconds
+  //     // Format duration as HH:MM:SS with defensive check
+  //     const durationSecs = ffprobeInfo.format.duration
+  //       ? parseFloat(ffprobeInfo.format.duration)
+  //       : 600; // Default 10 minutes in seconds
 
-      const hours = Math.floor(durationSecs / 3600);
-      const minutes = Math.floor((durationSecs % 3600) / 60);
-      const seconds = Math.floor(durationSecs % 60);
+  //     const hours = Math.floor(durationSecs / 3600);
+  //     const minutes = Math.floor((durationSecs % 3600) / 60);
+  //     const seconds = Math.floor(durationSecs % 60);
 
-      const formattedDuration = [
-        hours.toString().padStart(2, '0'),
-        minutes.toString().padStart(2, '0'),
-        seconds.toString().padStart(2, '0'),
-      ].join(':');
+  //     const formattedDuration = [
+  //       hours.toString().padStart(2, '0'),
+  //       minutes.toString().padStart(2, '0'),
+  //       seconds.toString().padStart(2, '0'),
+  //     ].join(':');
 
-      return {
-        duration: formattedDuration,
-        width: videoStream.width,
-        height: videoStream.height,
-        codec: videoStream.codec_name,
-      };
-    } catch (error) {
-      console.error('Failed to extract video metadata:', error);
-      // Return a default value if extraction fails
-      return { duration: '00:10:00' }; // Default 10 minutes
-    }
-  }
+  //     return {
+  //       duration: formattedDuration,
+  //       width: videoStream.width,
+  //       height: videoStream.height,
+  //       codec: videoStream.codec_name,
+  //     };
+  //   } catch (error) {
+  //     console.error('Failed to extract video metadata:', error);
+  //     // Return a default value if extraction fails
+  //     return { duration: '00:10:00' }; // Default 10 minutes
+  //   }
+  // }
 
   // Core Course Methods
   async createCourse(
@@ -115,14 +115,14 @@ export class MainCourseService {
       }
 
       // Extract video metadata
-      const { duration, width, height, codec } =
-        await this.extractMetadata(video);
+      // const { duration, width, height, codec } =
+      //   await this.extractMetadata(video);
 
       try {
-        createCourseDto.duration = duration;
-        createCourseDto.width = width;
-        createCourseDto.height = height;
-        createCourseDto.codec = codec;
+        // createCourseDto.duration = duration;
+        // createCourseDto.width = width;
+        // createCourseDto.height = height;
+        // createCourseDto.codec = codec;
 
         // Generate a temporary ID for tracking this upload
         const uploadId = Date.now().toString();

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CourseController } from './course.controller';
-import { CourseService } from './course.service';
+import { CourseService } from './services';
 import { Course } from './entities/course.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import { User } from '../users/entities/user.entity';
@@ -21,7 +21,6 @@ import {
   AdditionalResourceService,
   CourseProgressService,
   StorageCalculatorService,
-  MainCourseService,
 } from './services';
 import { Role } from '../role/entities/role.entity';
 import { CloudinaryUploadService } from '../../fileUpload/cloudinary/cloudinaryUpload.service';
@@ -58,7 +57,6 @@ import { AwsModule } from '../../fileUpload/aws/aws.module';
     StorageCalculatorService,
     CloudinaryUploadService,
     S3Service,
-    MainCourseService,
   ],
   exports: [CourseService],
 })

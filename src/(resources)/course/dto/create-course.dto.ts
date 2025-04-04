@@ -49,17 +49,21 @@ export class CreateCourseDto {
   @IsString({ each: true })
   topics: string[];
 
-  @IsOptional()
-  duration?: string;
+  @ApiProperty({
+    description: 'Is the course offline accessible',
+    example: true,
+  })
+  @IsString()
+  duration: string;
 
-  @IsOptional()
-  width?: number;
+  // @IsOptional()
+  // width?: number;
 
-  @IsOptional()
-  height?: number;
+  // @IsOptional()
+  // height?: number;
 
-  @IsOptional()
-  codec?: string;
+  // @IsOptional()
+  // codec?: string;
 
   @ApiProperty({
     description: 'Category ID of the course',
