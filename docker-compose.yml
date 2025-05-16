@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  nestjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: talenvo-api
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5000
+      - RECOMMENDATION_SERVICE_URL=http://recommendation:8000
+      - MYSQL_HOST=db
+      - MYSQL_PORT=5432
+      - MYSQL_USER=${DB_USER:-postgres}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-postgres}
+      - MYSQL_DATABASE=${DB_NAME:-talenvo}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-devkey}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-24h}
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - ./temp-uploads:/app/temp-uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      recommendation:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:5000/api',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  recommendation:
+    build:
+      context: ./recommendation_service
+      dockerfile: Dockerfile
+    container_name: talenvo-recommendation
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8000/docs',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  db:
+    image: postgres:13-alpine
+    container_name: talenvo-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${DB_NAME:-talenvo}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-talenvo}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    name: talenvo-postgres-data
