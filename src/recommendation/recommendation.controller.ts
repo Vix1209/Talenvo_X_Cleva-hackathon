@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   StudentRecommendationDto,
   TeacherRecommendationDto,

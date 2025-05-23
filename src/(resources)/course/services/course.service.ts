@@ -130,9 +130,7 @@ export class CourseService {
 
         createCourseDto.userId = userId;
 
-        if (Array.isArray(createCourseDto.topics)) {
-          createCourseDto.topics;
-        } else {
+        if (!Array.isArray(createCourseDto.topics)) {
           createCourseDto.topics = [createCourseDto.topics];
         }
 
@@ -375,7 +373,6 @@ export class CourseService {
     // If categoryId is provided, verify the category exists
     if (updateCourseDto.categoryId) {
       await this.categoryService.findOneCategory(updateCourseDto.categoryId);
-    } else {
     }
 
     Object.assign(course, updateCourseDto);

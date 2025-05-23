@@ -29,7 +29,6 @@ export class StorageCalculatorService {
       // Add main video size
       totalSize += this.calculateMainVideoSize(course.duration);
 
-
       // Add additional resources size
       totalSize += this.calculateAdditionalResourcesSize(
         course.additionalResources,
@@ -79,7 +78,7 @@ export class StorageCalculatorService {
         }
       }
       return 10; // Default to 10 minutes if parsing fails
-    } catch (error) {
+    } catch {
       console.warn(
         `Failed to parse duration "${duration}", using default of 10 minutes`,
       );

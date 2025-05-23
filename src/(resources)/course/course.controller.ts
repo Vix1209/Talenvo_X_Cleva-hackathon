@@ -38,8 +38,6 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { Course } from './entities/course.entity';
-import { CourseProgress } from './entities/course-progress.entity';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../auth/guard/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';

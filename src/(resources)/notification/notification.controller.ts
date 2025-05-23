@@ -1,8 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Param,
   Delete,
   UseGuards,
@@ -13,11 +11,9 @@ import {
   ApiBearerAuth,
   ApiExcludeController,
   ApiOperation,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
 import { Notification } from './entities/notification.entity';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 
