@@ -338,7 +338,7 @@ export class CourseProgressService {
     }
 
     // Find progress record
-    let progress = await this.courseProgressRepository.findOne({
+    const progress = await this.courseProgressRepository.findOne({
       where: { userId, courseId },
     });
 

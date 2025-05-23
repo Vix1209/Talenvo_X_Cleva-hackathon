@@ -7,7 +7,6 @@ import {
   IsNotEmpty,
   MinLength,
   Matches,
-  IsArray,
 } from 'class-validator';
 import {
   CreateAdminProfileDto,

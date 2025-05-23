@@ -1,16 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Req,
-  Res,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './guard/jwt.guard';
@@ -24,7 +13,6 @@ import {
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GlobalApiResponse } from 'utils/decorator/api-response.decorator';
-import { AuthGuard } from '@nestjs/passport';
 import { ResendVerifyEmailDto, VerifyEmailDto } from './dto/verifyEmail.dto';
 import { ResetTokenDto } from './dto/reset-token.dto';
 

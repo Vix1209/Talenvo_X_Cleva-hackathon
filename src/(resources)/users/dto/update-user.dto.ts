@@ -1,14 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-  IsInt,
-  IsNumber,
-  IsUrl,
-} from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsUUID, IsInt } from 'class-validator';
 
 // ------------------ Student Profile DTOs ------------------ //
 export class CreateStudentProfileDto {
