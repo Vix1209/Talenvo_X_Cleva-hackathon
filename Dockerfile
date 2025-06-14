@@ -1,4 +1,11 @@
-FROM node:18-alpine
+FROM node:20-slim
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -18,4 +25,4 @@ RUN npm run build
 EXPOSE 5000
 
 # Command to run the application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

@@ -1,14 +1,13 @@
-const { FlatCompat } = require('@eslint/eslintrc');
-const js = require('@eslint/js');
-const path = require('path');
+import { FlatCompat } from '@eslint/eslintrc';
+import { configs } from '@eslint/js';
 
 // Mimic ESLintRC functionality in flat config
 const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-module.exports = [
-  js.configs.recommended,
+export default [
+  configs.recommended,
   ...compat.config({
     extends: [
       'plugin:@typescript-eslint/recommended',

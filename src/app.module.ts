@@ -1,5 +1,4 @@
 import { Logger, Module, ValidationPipe } from '@nestjs/common';
-import { RecommendationModule } from './recommendation/recommendation.module';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ErrorInterceptor } from './interceptors/error.interceptor';
 import { ErrorFilter } from './filters/error.filters';
@@ -16,7 +15,6 @@ import { CourseModule } from './(resources)/course/course.module';
       isGlobal: true,
       cache: false,
     }),
-    RecommendationModule,
     AuthModule,
     UsersModule,
     RoleModule,
