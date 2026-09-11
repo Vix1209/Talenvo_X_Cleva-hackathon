@@ -79,7 +79,14 @@ export class UsersController {
   @Post(':id/update-profile-image')
   @UseGuards(JwtGuard)
   @ApiBearerAuth('JWT')
-  @UseInterceptors(FileInterceptor('profileImage'))
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      limits: {
+        // @ts-expect-error fieldArrayIndexLimit exists on multer 2.3.0 but @types/multer hasn't caught up
+        fieldArrayIndexLimit: 100,
+      },
+    }),
+  )
   @ApiOperation({ summary: 'Update profile image - (All)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

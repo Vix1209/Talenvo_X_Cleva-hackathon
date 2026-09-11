@@ -135,6 +135,8 @@ export class CourseController {
       storage: memoryStorage(),
       limits: {
         fileSize: 1024 * 1024 * 500,
+        // @ts-expect-error fieldArrayIndexLimit exists on multer 2.3.0 but @types/multer hasn't caught up
+        fieldArrayIndexLimit: 100,
       },
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
